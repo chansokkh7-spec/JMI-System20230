@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import os
 
 # --- ១. ការពារ Error Library ---
 try:
@@ -41,26 +42,33 @@ st.markdown("""
 # --- ៤. ការគ្រប់គ្រងទិន្នន័យ (Database) ---
 if 'db' not in st.session_state:
     st.session_state.db = pd.DataFrame([
-        {"ID": "JMI-001", "Name": "CHAN SOKHOEURN", "Level": "វិទ្យាល័យ", "Fee": 500.0, "Paid": "បង់រួច", "Date": "2026-03-25"},
-        {"ID": "JMI-002", "Name": "SOPHEAP RA", "Level": "បឋម", "Fee": 300.0, "Paid": "មិនទាន់បង់", "Date": "2026-04-01"}
+        {"ID": "JMI-001", "Name": "CHAN SOKHOEURN", "Level": "វិទ្យាល័យ", "Fee": 500.0, "Paid": "បង់រួច", "Date": "2026-03-25"}
     ])
 
 # --- ៥. Sidebar ---
 with st.sidebar:
+    # បង្ហាញ Logo (ប្រសិនបើមាន file logo.png នៅក្នុង folder)
+    if os.path.exists("logo.png"):
+        st.image("logo.png", use_container_width=True)
+    else:
+        st.markdown("<center><h1 style='font-size:70px; margin:0;'>🛡️</h1></center>", unsafe_allow_html=True)
+    
     st.markdown("<h2 style='text-align: center;'>JMI EXECUTIVE</h2>", unsafe_allow_html=True)
-    st.markdown("<center><h1 style='font-size:70px; margin:0;'>🛡️</h1></center>", unsafe_allow_html=True)
     st.markdown("---")
     pwd = st.text_input("Director's Key", type="password")
+    
     if pwd == "JMI2026":
-        menu = st.sidebar.radio("STRATEGIC MODULES", ["📊 Dashboard", "🎓 Enrollment", "📔 Skill Passport", "📜 Certification", "💰 Financial Hub"])
+        menu = st.sidebar.radio("STRATEGIC MODULES", 
+            ["📊 Dashboard", "🎓 Enrollment", "📔 Skill Passport", "📜 Certification", "💰 Financial Hub"])
     else:
+        st.warning("🔒 សម្រាប់ការប្រើប្រាស់ កម្រិតនាយកសាលាតែប៉ុណ្ណោះ")
         st.stop()
 
-# --- MODULE 1: DASHBOARD (កែលម្អថ្មី) ---
+# --- MODULE 1: DASHBOARD (Analytical View) ---
 if menu == "📊 Dashboard":
     st.markdown("<h1 class='header-style'>JMI Strategic Analytics</h1>", unsafe_allow_html=True)
     
-    # --- លេខសង្ខេប (Summary Cards) ---
+    # Statistics Cards
     c1, c2, c3, c4 = st.columns(4)
     total_s = len(st.session_state.db)
     total_rev = st.session_state.db[st.session_state.db['Paid'] == "បង់រួច"]['Fee'].sum()
@@ -73,31 +81,24 @@ if menu == "📊 Dashboard":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- ក្រាហ្វិក (Charts) ---
+    # Charts
     if HAS_PLOTLY and not st.session_state.db.empty:
         col_left, col_right = st.columns(2)
-        
         with col_left:
-            st.markdown("### 🎓 Student Levels (Pie Chart)")
-            fig_pie = px.pie(st.session_state.db, names='Level', 
-                             color_discrete_sequence=['#D4AF37', '#B8860B', '#8A6D3B', '#FFD700'],
-                             hole=0.4)
-            fig_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color='#D4AF37')
+            fig_pie = px.pie(st.session_state.db, names='Level', hole=0.4, 
+                             color_discrete_sequence=['#D4AF37', '#B8860B', '#8A6D3B'])
+            fig_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color='#D4AF37', title="Student Levels Distribution")
             st.plotly_chart(fig_pie, use_container_width=True)
-            
         with col_right:
-            st.markdown("### 💵 Payment Status (Bar Chart)")
             fig_bar = px.bar(st.session_state.db, x='Paid', y='Fee', color='Paid',
                              color_discrete_map={'បង់រួច': '#D4AF37', 'មិនទាន់បង់': '#3B5998'})
-            fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color='#D4AF37')
+            fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color='#D4AF37', title="Revenue Overview")
             st.plotly_chart(fig_bar, use_container_width=True)
-    else:
-        st.info("Install plotly to see advanced analytics.")
 
     st.markdown("### 📋 Student Master List")
     st.dataframe(st.session_state.db, use_container_width=True)
 
-# --- MODULE ផ្សេងៗទៀត (រក្សាកូដដដែល) ---
+# --- MODULE 2: ENROLLMENT ---
 elif menu == "🎓 Enrollment":
     st.markdown("<h1 class='header-style'>Scholar Registration</h1>", unsafe_allow_html=True)
     with st.form("enroll"):
@@ -110,30 +111,48 @@ elif menu == "🎓 Enrollment":
             st.session_state.db = pd.concat([st.session_state.db, new_data], ignore_index=True)
             st.success(f"ចុះឈ្មោះ {name} ជោគជ័យ!")
 
+# --- MODULE 3: SKILL PASSPORT ---
 elif menu == "📔 Skill Passport":
     st.markdown("<h1 class='header-style'>📔 Skill Mastery Passport</h1>", unsafe_allow_html=True)
     if not st.session_state.db.empty:
         sel_student = st.selectbox("Select Student:", st.session_state.db['Name'].tolist())
+        st.info(f"Student Level: {st.session_state.db[st.session_state.db['Name']==sel_student]['Level'].values[0]}")
         cols = st.columns(2)
         for i in range(1, 13):
             with cols[0 if i <= 6 else 1]:
-                st.checkbox(f"មេរៀនទី {i}", key=f"L{i}_{sel_student}")
+                st.checkbox(f"Medical Competency {i}", key=f"L{i}_{sel_student}")
+    else:
+        st.warning("មិនទាន់មានទិន្នន័យសិស្ស។")
 
+# --- MODULE 4: CERTIFICATION ---
 elif menu == "📜 Certification":
-    st.markdown("<h1 class='header-style'>Certification Generator</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='header-style'>Official Certification Hub</h1>", unsafe_allow_html=True)
     if not st.session_state.db.empty:
         rec_name = st.selectbox("Select Recipient:", st.session_state.db['Name'].tolist())
-        if st.button("GENERATE"):
+        if st.button("GENERATE OFFICIAL CERTIFICATE"):
             s = st.session_state.db[st.session_state.db['Name'] == rec_name].iloc[0]
-            st.markdown(f"""<div style="background:white; padding:40px; border:15px solid #D4AF37; text-align:center;">
-                <h1 style="color:#D4AF37 !important;">JUNIOR MEDICAL INSTITUTE</h1>
-                <h2 style="color:#B8860B !important;">{s['Name']}</h2>
-                <p style="color:#001529 !important;">Completed: {s['Level']}</p>
-                <hr><p style="color:#001529 !important;">Dr. CHAN Sokhoeurn</p></div>""", unsafe_allow_html=True)
+            st.markdown(f"""
+                <div style="background:white; padding:50px; border:15px double #D4AF37; text-align:center;">
+                    <h1 style="color:#D4AF37 !important; font-family:'Cinzel'; margin:0;">JUNIOR MEDICAL INSTITUTE</h1>
+                    <p style="color:#001529 !important; font-size:20px; letter-spacing:3px;">CERTIFICATE OF EXCELLENCE</p>
+                    <br>
+                    <p style="color:#001529 !important;">This is to certify that</p>
+                    <h2 style="color:#B8860B !important; font-size:45px; font-family:'Cinzel'; border-bottom: 2px solid #D4AF37; display:inline-block; padding:0 20px;">{s['Name']}</h2>
+                    <br><br>
+                    <p style="color:#001529 !important;">Has successfully completed the medical curriculum for</p>
+                    <h3 style="color:#002d5a !important;">LEVEL: {s['Level']}</h3>
+                    <br><br>
+                    <div style="display: flex; justify-content: space-around; color:#001529 !important;">
+                        <div>_________________________<br><b>Academic Board</b></div>
+                        <div>_________________________<br><b>Dr. CHAN Sokhoeurn</b><br><small>Founder & Director</small></div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
 
+# --- MODULE 5: FINANCIAL HUB ---
 elif menu == "💰 Financial Hub":
     st.markdown("<h1 class='header-style'>💰 Financial Management</h1>", unsafe_allow_html=True)
     edited_finance = st.data_editor(st.session_state.db, use_container_width=True)
     if st.button("💾 Save Financial Updates"):
         st.session_state.db = edited_finance
-        st.success("ស្ថានភាពហិរញ្ញវត្ថុត្រូវបានធ្វើបច្ចុប្បន្នភាព!")
+        st.success("ទិន្នន័យហិរញ្ញវត្ថុត្រូវបានរក្សាទុក!")

@@ -9,15 +9,31 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- ២. ការរចនា Style (Safe CSS) ---
+# --- ២. ការរចនា Style (Safe CSS - International Standard Look) ---
 style_block = """
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cinzel:wght@700&family=DM+Serif+Display&family=Kantumruy+Pro:wght@400;700&display=swap" rel="stylesheet">
 <style>
     html, body, [class*="css"], .stMarkdown {
         font-family: 'Kantumruy Pro', sans-serif;
     }
-    .stApp { background-color: #f8f9fa; }
+    .stApp { background-color: #f0f2f6; }
     .star-gold { color: #D4AF37; font-size: 25px; margin-right: 3px; }
+    
+    /* Dashboard KPI Cards */
+    .metric-card {
+        background-color: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border-left: 5px solid #001f3f;
+        text-align: center;
+        transition: transform 0.2s;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+    }
+    .metric-title { font-size: 14px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+    .metric-value { font-size: 32px; font-weight: bold; color: #001f3f; margin: 10px 0; }
     
     /* Premium Certificate Style */
     .cert-paper { 
@@ -47,9 +63,6 @@ if 'db' not in st.session_state:
         {"ID": "JMI-004", "Name": "សិស្សគំរូ វិទ្យាល័យ", "Level": "វិទ្យាល័យ", "Enroll_Date": "2026-03-25", "Status": "Active", "Skills": []},
     ])
 
-if 'filter_level' not in st.session_state:
-    st.session_state.filter_level = "ទាំងអស់"
-
 # --- ៤. របារចំហៀង (Sidebar) ---
 st.sidebar.markdown("<h2 style='text-align: center; color: #001f3f;'>JMI EXECUTIVE</h2>", unsafe_allow_html=True)
 st.sidebar.markdown("<center><h1 style='font-size:60px;'>🏥</h1></center>", unsafe_allow_html=True)
@@ -66,35 +79,72 @@ if pwd == "JMI2026":
     # មុខងារកំណត់មេរៀនស្វ័យប្រវត្តិតាមកម្រិត
     def get_lessons(level):
         if level in ["មត្តេយ្យ", "បឋម"]:
-            return [f"មេរៀនទី {i}" for i in range(1, 10)] # ៩ មេរៀន
+            return [f"មេរៀនទី {i}" for i in range(1, 10)]
         else:
-            return [f"មេរៀនទី {i}" for i in range(1, 13)] # ១២ មេរៀន
+            return [f"មេរៀនទី {i}" for i in range(1, 13)]
 
-    # --- ៥.១ Dashboard ---
+    # --- ៥.១ Dashboard (ស្ដង់ដារអន្តរជាតិ & CRUD) ---
     if menu == "📊 Dashboard":
         st.title("🏥 JMI Strategic Command Center")
+        st.markdown("គ្រប់គ្រងស្ថិតិ និងទិន្នន័យសិស្សជាសកល")
         
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Total Scholars", len(st.session_state.db))
-        c2.metric("Status", "Operational")
-        c3.metric("Year", "2026")
+        # Dashboard KPI Cards (UI ទំនើប)
+        total_scholars = len(st.session_state.db)
+        active_scholars = len(st.session_state.db[st.session_state.db['Status'] == 'Active'])
         
-        st.markdown("### 🔍 ច្រោះទិន្នន័យតាមកម្រិតសិក្សា (Quick Filter)")
+        col_m1, col_m2, col_m3 = st.columns(3)
+        with col_m1:
+            st.markdown(f'<div class="metric-card"><div class="metric-title">👥 Total Scholars</div><div class="metric-value">{total_scholars}</div></div>', unsafe_allow_html=True)
+        with col_m2:
+            st.markdown(f'<div class="metric-card"><div class="metric-title">✅ Active Students</div><div class="metric-value">{active_scholars}</div></div>', unsafe_allow_html=True)
+        with col_m3:
+            st.markdown(f'<div class="metric-card"><div class="metric-title">📅 Current Year</div><div class="metric-value">2026</div></div>', unsafe_allow_html=True)
+            
+        st.markdown("<br>", unsafe_allow_html=True)
         
-        b0, b1, b2, b3, b4 = st.columns(5)
-        if b0.button("🌐 ទាំងអស់", use_container_width=True): st.session_state.filter_level = "ទាំងអស់"
-        if b1.button("🧸 មត្តេយ្យ", use_container_width=True): st.session_state.filter_level = "មត្តេយ្យ"
-        if b2.button("🎒 បឋម", use_container_width=True): st.session_state.filter_level = "បឋម"
-        if b3.button("📚 អនុវិទ្យាល័យ", use_container_width=True): st.session_state.filter_level = "អនុវិទ្យាល័យ"
-        if b4.button("🎓 វិទ្យាល័យ", use_container_width=True): st.session_state.filter_level = "វិទ្យាល័យ"
-
-        if st.session_state.filter_level == "ទាំងអស់":
-            display_db = st.session_state.db
+        # Analytics Chart
+        st.markdown("### 📊 ក្រាហ្វិកស្ថិតិសិស្សតាមកម្រិត (Analytics)")
+        if not st.session_state.db.empty:
+            level_counts = st.session_state.db['Level'].value_counts()
+            st.bar_chart(level_counts, color="#001f3f")
         else:
-            display_db = st.session_state.db[st.session_state.db['Level'] == st.session_state.filter_level]
+            st.info("មិនទាន់មានទិន្នន័យសម្រាប់បង្ហាញក្រាហ្វិកទេ។")
 
-        st.markdown(f"**កំពុងបង្ហាញ៖ សិស្សកម្រិត [{st.session_state.filter_level}]**")
-        st.dataframe(display_db.drop(columns=['Skills']), use_container_width=True)
+        st.markdown("---")
+        
+        # CRUD Section (ចុចកែ ឬលុបទិន្នន័យផ្ទាល់)
+        st.markdown("### ⚙️ Data Management Hub (រក្សាទុក កែ និងលុប)")
+        st.info("💡 លោកអ្នកអាចចុចលើប្រអប់ដើម្បីកែប្រែ ឬចុចលើជួរដេក រួចចុចគ្រាប់ចុច `Delete` លើ Keyboard ដើម្បីលុប (ឬប្រើប៊ូតុងខាងស្ដាំតារាង)។")
+        
+        # ប្រើប្រាស់ st.data_editor ជំនួស st.dataframe ធម្មតា
+        edited_data = st.data_editor(
+            st.session_state.db, 
+            num_rows="dynamic", # អនុញ្ញាតឱ្យបន្ថែម និងលុបជួរដេក
+            use_container_width=True,
+            column_config={
+                "Status": st.column_config.SelectboxColumn(
+                    "Status",
+                    help="ស្ថានភាពសិក្សា",
+                    options=["Active", "Inactive", "Graduated"],
+                    required=True
+                ),
+                "Level": st.column_config.SelectboxColumn(
+                    "Level",
+                    options=["មត្តេយ្យ", "បឋម", "អនុវិទ្យាល័យ", "វិទ្យាល័យ"],
+                    required=True
+                ),
+                "Enroll_Date": st.column_config.DateColumn(
+                    "Enroll Date",
+                    format="YYYY-MM-DD"
+                )
+            }
+        )
+        
+        # ប៊ូតុងរក្សាទុក
+        if st.button("💾 រក្សាទុកការផ្លាស់ប្តូរ (Save Changes)", type="primary"):
+            st.session_state.db = edited_data
+            st.success("🎉 ទិន្នន័យត្រូវបានរក្សាទុកដោយជោគជ័យ!")
+            st.rerun()
 
     # --- ៥.២ Enrollment (ចុះឈ្មោះ) ---
     elif menu == "🎓 Enrollment":
@@ -166,11 +216,10 @@ if pwd == "JMI2026":
                 st.success(f"Updated skills for {student_name}!")
                 st.rerun()
 
-    # --- ៥.៤ Certification (កែសម្រួលឱ្យដូច Skill Passport) ---
+    # --- ៥.៤ Certification ---
     elif menu == "📜 Certification":
         st.header("Certification Generator")
         
-        # បន្ថែមការជ្រើសរើសកម្រិត ដើម្បីចម្រោះឈ្មោះសិស្ស
         sel_level_cert = st.selectbox("Select Level (ជ្រើសរើសកម្រិតសិក្សា):", ["ទាំងអស់", "មត្តេយ្យ", "បឋម", "អនុវិទ្យាល័យ", "វិទ្យាល័យ"], key="cert_level_sel")
         
         if sel_level_cert == "ទាំងអស់":
@@ -181,11 +230,9 @@ if pwd == "JMI2026":
         if filtered_students_cert.empty:
             st.warning(f"មិនទាន់មានសិស្សនៅក្នុងកម្រិត '{sel_level_cert}' ទេ។")
         else:
-            # បង្ហាញឈ្មោះសិស្ស ភ្ជាប់ជាមួយកម្រិត
             student_list_cert = filtered_students_cert.apply(lambda x: f"{x['Name']} ({x['Level']})", axis=1).tolist()
             sel_student_str_cert = st.selectbox("Select Recipient (ជ្រើសរើសសិស្ស):", student_list_cert, key="cert_student_sel")
             
-            # ទាញយក index ពិតប្រាកដក្នុង Database
             selected_idx_cert = filtered_students_cert.index[student_list_cert.index(sel_student_str_cert)]
             s_info = st.session_state.db.loc[selected_idx_cert]
             

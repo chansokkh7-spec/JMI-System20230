@@ -3,24 +3,24 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# --- ១. ការពារ Error Library ---
+# --- 1. Library Error Prevention ---
 try:
     import plotly.express as px
     HAS_PLOTLY = True
 except ImportError:
     HAS_PLOTLY = False
 
-# --- ២. ការកំណត់ទម្រង់កម្មវិធី ---
+# --- 2. Page Configuration ---
 st.set_page_config(page_title="JMI | Strategic Management Portal", page_icon="🛡️", layout="wide")
 
-# --- ៣. ការរចនា Style (Golden Luxury Theme) ---
+# --- 3. UI Styling (Golden Luxury Theme) ---
 st.markdown("""
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Kantumruy+Pro:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Inter:wght@400;700&display=swap" rel="stylesheet">
 <style>
     .stApp { background: radial-gradient(circle, #002d5a 0%, #001529 100%); }
     html, body, [data-testid="stWidgetLabel"], .stMarkdown, p, span, label, li, div, h1, h2, h3, .stMetric, [data-testid="stHeader"] {
         color: #D4AF37 !important;
-        font-family: 'Kantumruy Pro', 'Cinzel', sans-serif;
+        font-family: 'Inter', 'Cinzel', sans-serif;
     }
     [data-testid="stSidebar"] { background-color: #001529 !important; border-right: 1px solid rgba(212,175,55,0.4); }
     .stButton>button { 
@@ -39,15 +39,14 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- ៤. ការគ្រប់គ្រងទិន្នន័យ (Database) ---
+# --- 4. Database Management ---
 if 'db' not in st.session_state:
     st.session_state.db = pd.DataFrame([
-        {"ID": "JMI-001", "Name": "CHAN SOKHOEURN", "Level": "វិទ្យាល័យ", "Fee": 500.0, "Paid": "បង់រួច", "Date": "2026-03-25"}
+        {"ID": "JMI-001", "Name": "CHAN SOKHOEURN", "Level": "HIGH SCHOOL", "Fee": 500.0, "Paid": "PAID", "Date": "2026-03-25"}
     ])
 
-# --- ៥. Sidebar ---
+# --- 5. Sidebar Navigation ---
 with st.sidebar:
-    # បង្ហាញ Logo (ត្រូវដាក់ file logo.png ក្នុង folder តែមួយ)
     if os.path.exists("logo.png"):
         st.image("logo.png", use_container_width=True)
     else:
@@ -61,7 +60,7 @@ with st.sidebar:
         menu = st.sidebar.radio("STRATEGIC MODULES", 
             ["📊 Dashboard", "🎓 Enrollment", "📔 Skill Passport", "📜 Certification", "💰 Financial Hub"])
     else:
-        st.warning("🔒 សម្រាប់ការប្រើប្រាស់ កម្រិតនាយកសាលាតែប៉ុណ្ណោះ")
+        st.warning("🔒 SECURE ACCESS ONLY: DIRECTOR LEVEL")
         st.stop()
 
 # --- MODULE 1: DASHBOARD ---
@@ -70,8 +69,8 @@ if menu == "📊 Dashboard":
     
     c1, c2, c3, c4 = st.columns(4)
     total_s = len(st.session_state.db)
-    total_rev = st.session_state.db[st.session_state.db['Paid'] == "បង់រួច"]['Fee'].sum()
-    pending_rev = st.session_state.db[st.session_state.db['Paid'] == "មិនទាន់បង់"]['Fee'].sum()
+    total_rev = st.session_state.db[st.session_state.db['Paid'] == "PAID"]['Fee'].sum()
+    pending_rev = st.session_state.db[st.session_state.db['Paid'] == "UNPAID"]['Fee'].sum()
     
     with c1: st.markdown(f"<div class='stat-card'>📚<br><small>Total Scholars</small><h2>{total_s}</h2></div>", unsafe_allow_html=True)
     with c2: st.markdown(f"<div class='stat-card'>💰<br><small>Total Revenue</small><h2>${total_rev:,.0f}</h2></div>", unsafe_allow_html=True)
@@ -91,7 +90,7 @@ if menu == "📊 Dashboard":
         with col_right:
             st.markdown("### 💵 Revenue Status")
             fig_bar = px.bar(st.session_state.db, x='Paid', y='Fee', color='Paid',
-                             color_discrete_map={'បង់រួច': '#D4AF37', 'មិនទាន់បង់': '#3B5998'})
+                             color_discrete_map={'PAID': '#D4AF37', 'UNPAID': '#3B5998'})
             fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color='#D4AF37')
             st.plotly_chart(fig_bar, use_container_width=True)
 
@@ -102,12 +101,11 @@ if menu == "📊 Dashboard":
 elif menu == "🎓 Enrollment":
     st.markdown("<h1 class='header-style'>Scholar Registration</h1>", unsafe_allow_html=True)
     with st.form("enroll"):
-        name = st.text_input("ឈ្មោះសិស្ស (Full Name)")
-        level = st.selectbox("កម្រិតសិក្សា", ["មត្តេយ្យ", "បឋម", "អនុវិទ្យាល័យ", "វិទ្យាល័យ"])
-        fee = st.number_input("តម្លៃសិក្សា ($)", min_value=0.0, value=250.0)
+        name = st.text_input("Scholar Full Name")
+        level = st.selectbox("Academic Level", ["KINDERGARTEN", "PRIMARY", "SECONDARY", "HIGH SCHOOL"])
+        fee = st.number_input("Tuition Fee ($)", min_value=0.0, value=250.0)
         
-        # បន្ថែមចំណុចបង់ប្រាក់ភ្លាមៗ
-        payment_now = st.radio("បង់ប្រាក់ឥឡូវនេះ? (Payment Status)", ["មិនទាន់បង់", "បង់រួច"], horizontal=True)
+        payment_now = st.radio("Initial Payment Status", ["UNPAID", "PAID"], horizontal=True)
         
         if st.form_submit_button("REGISTER NOW"):
             if name:
@@ -121,9 +119,9 @@ elif menu == "🎓 Enrollment":
                     "Date": datetime.now().strftime("%Y-%m-%d")
                 }])
                 st.session_state.db = pd.concat([st.session_state.db, new_data], ignore_index=True)
-                st.success(f"ចុះឈ្មោះ {name} ជោគជ័យ!")
+                st.success(f"REGISTRATION SUCCESSFUL: {name}")
             else:
-                st.error("សូមបញ្ចូលឈ្មោះសិស្ស!")
+                st.error("REQUIRED: PLEASE ENTER FULL NAME")
 
 # --- MODULE 3: SKILL PASSPORT ---
 elif menu == "📔 Skill Passport":
@@ -136,7 +134,7 @@ elif menu == "📔 Skill Passport":
             with cols[0 if i <= 6 else 1]:
                 st.checkbox(f"Medical Competency Module {i}", key=f"L{i}_{sel_student}")
     else:
-        st.warning("មិនទាន់មានទិន្នន័យសិស្ស។")
+        st.warning("NO DATA FOUND: ENROLL STUDENTS FIRST")
 
 # --- MODULE 4: CERTIFICATION ---
 elif menu == "📜 Certification":
@@ -166,8 +164,8 @@ elif menu == "📜 Certification":
 # --- MODULE 5: FINANCIAL HUB ---
 elif menu == "💰 Financial Hub":
     st.markdown("<h1 class='header-style'>💰 Financial Management</h1>", unsafe_allow_html=True)
-    st.write("លោកគ្រូអាចកែសម្រួលស្ថានភាពបង់ប្រាក់ក្នុងតារាងខាងក្រោម រួចចុច Save")
+    st.write("Edit payment statuses directly in the table below and click Save.")
     edited_finance = st.data_editor(st.session_state.db, use_container_width=True)
-    if st.button("💾 Save Financial Updates"):
+    if st.button("💾 SAVE FINANCIAL UPDATES"):
         st.session_state.db = edited_finance
-        st.success("ទិន្នន័យហិរញ្ញវត្ថុត្រូវបានធ្វើបច្ចុប្បន្នភាព!")
+        st.success("FINANCIAL DATA SYNCHRONIZED SUCCESSFULLY")

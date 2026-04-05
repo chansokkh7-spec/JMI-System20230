@@ -41,15 +41,15 @@ st.markdown(style_block, unsafe_allow_html=True)
 # --- ៣. ការគ្រប់គ្រងទិន្នន័យ (Session State) ---
 if 'db' not in st.session_state:
     st.session_state.db = pd.DataFrame([
-        {
-            "ID": "JMI-2026-001", 
-            "Name": "Sokhoeurn Sovannachak", 
-            "Level": "មត្តេយ្យ", 
-            "Enroll_Date": "2026-03-25", 
-            "Status": "Active", 
-            "Skills": []
-        }
+        {"ID": "JMI-001", "Name": "សិស្សគំរូ មត្តេយ្យ", "Level": "មត្តេយ្យ", "Enroll_Date": "2026-03-25", "Status": "Active", "Skills": []},
+        {"ID": "JMI-002", "Name": "សិស្សគំរូ បឋម", "Level": "បឋម", "Enroll_Date": "2026-03-25", "Status": "Active", "Skills": []},
+        {"ID": "JMI-003", "Name": "សិស្សគំរូ អនុវិទ្យាល័យ", "Level": "អនុវិទ្យាល័យ", "Enroll_Date": "2026-03-25", "Status": "Active", "Skills": []},
+        {"ID": "JMI-004", "Name": "សិស្សគំរូ វិទ្យាល័យ", "Level": "វិទ្យាល័យ", "Enroll_Date": "2026-03-25", "Status": "Active", "Skills": []},
     ])
+
+# បង្កើត State សម្រាប់ចាំការចុច Button ចម្រោះទិន្នន័យ
+if 'filter_level' not in st.session_state:
+    st.session_state.filter_level = "ទាំងអស់"
 
 # --- ៤. របារចំហៀង (Sidebar) ---
 st.sidebar.markdown("<h2 style='text-align: center; color: #001f3f;'>JMI EXECUTIVE</h2>", unsafe_allow_html=True)
@@ -74,13 +74,36 @@ if pwd == "JMI2026":
     # --- ៥.១ Dashboard ---
     if menu == "📊 Dashboard":
         st.title("🏥 JMI Strategic Command Center")
+        
+        # ផ្ទាំងស្ថិតិសរុប
         c1, c2, c3 = st.columns(3)
         c1.metric("Total Scholars", len(st.session_state.db))
         c2.metric("Status", "Operational")
         c3.metric("Year", "2026")
         
-        st.markdown("### 📋 Student Roster")
-        st.dataframe(st.session_state.db.drop(columns=['Skills']), use_container_width=True)
+        st.markdown("### 🔍 ច្រោះទិន្នន័យតាមកម្រិតសិក្សា (Quick Filter)")
+        
+        # បន្ថែមប៊ូតុងទាំង ៤ តាមការស្នើសុំ (បូករួមទាំងប៊ូតុង "ទាំងអស់" មួយទៀតដើម្បីងាយស្រួលមើលឡើងវិញ)
+        b0, b1, b2, b3, b4 = st.columns(5)
+        if b0.button("🌐 ទាំងអស់", use_container_width=True):
+            st.session_state.filter_level = "ទាំងអស់"
+        if b1.button("🧸 មត្តេយ្យ", use_container_width=True):
+            st.session_state.filter_level = "មត្តេយ្យ"
+        if b2.button("🎒 បឋម", use_container_width=True):
+            st.session_state.filter_level = "បឋម"
+        if b3.button("📚 អនុវិទ្យាល័យ", use_container_width=True):
+            st.session_state.filter_level = "អនុវិទ្យាល័យ"
+        if b4.button("🎓 វិទ្យាល័យ", use_container_width=True):
+            st.session_state.filter_level = "វិទ្យាល័យ"
+
+        # Logic សម្រាប់ចម្រោះទិន្នន័យក្នុងតារាង
+        if st.session_state.filter_level == "ទាំងអស់":
+            display_db = st.session_state.db
+        else:
+            display_db = st.session_state.db[st.session_state.db['Level'] == st.session_state.filter_level]
+
+        st.markdown(f"**កំពុងបង្ហាញ៖ សិស្សកម្រិត [{st.session_state.filter_level}]**")
+        st.dataframe(display_db.drop(columns=['Skills']), use_container_width=True)
 
     # --- ៥.២ Enrollment (ចុះឈ្មោះ) ---
     elif menu == "🎓 Enrollment":
@@ -105,7 +128,7 @@ if pwd == "JMI2026":
                 else:
                     st.error("សូមបំពេញព័ត៌មានទាំងឈ្មោះ និងលេខសម្គាល់!")
 
-    # --- ៥.៣ Skill Passport (កំណត់មេរៀន) ---
+    # --- ៥.៣ Skill Passport ---
     elif menu == "🏅 Skill Passport":
         st.header("🏅 Skill Mastery Passport")
         sel_student = st.selectbox("Select Student:", st.session_state.db['Name'].tolist())
@@ -113,7 +136,6 @@ if pwd == "JMI2026":
         idx = st.session_state.db.index[st.session_state.db['Name'] == sel_student][0]
         student_level = st.session_state.db.at[idx, 'Level']
         
-        # ទាញយកចំនួនមេរៀនតាមកម្រិត
         available_skills = get_lessons(student_level)
         current_skills = st.session_state.db.at[idx, 'Skills']
         
@@ -131,7 +153,7 @@ if pwd == "JMI2026":
             st.success(f"Updated skills for {sel_student}!")
             st.rerun()
 
-    # --- ៥.៤ Certification (ចេញសញ្ញាបត្រ) ---
+    # --- ៥.៤ Certification ---
     elif menu == "📜 Certification":
         st.header("Certification Generator")
         target = st.selectbox("Select Recipient:", st.session_state.db['Name'].tolist())

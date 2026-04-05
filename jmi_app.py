@@ -100,55 +100,96 @@ if menu == "📊 Dashboard":
 # --- MODULE 2: ENROLLMENT ---
 elif menu == "🎓 Enrollment":
     st.markdown("<h1 class='header-style'>Scholar Registration</h1>", unsafe_allow_html=True)
-    with st.form("enroll"):
-        name = st.text_input("Scholar Full Name")
-        level = st.selectbox("Academic Level", ["KINDERGARTEN", "PRIMARY", "SECONDARY", "HIGH SCHOOL"])
-        fee = st.number_input("Tuition Fee ($)", min_value=0.0, value=250.0)
-        payment_now = st.radio("Initial Payment Status", ["UNPAID", "PAID"], horizontal=True)
-        
-        if st.form_submit_button("REGISTER NOW"):
-            if name:
-                new_id = f"JMI-{len(st.session_state.db)+1:03d}"
-                new_data = pd.DataFrame([{
-                    "ID": new_id, 
-                    "Name": name.upper(), 
-                    "Level": level, 
-                    "Fee": fee, 
-                    "Paid": payment_now, 
-                    "Date": datetime.now().strftime("%Y-%m-%d")
-                }])
-                st.session_state.db = pd.concat([st.session_state.db, new_data], ignore_index=True)
-                st.success(f"REGISTRATION SUCCESSFUL: {name}")
-            else:
-                st.error("REQUIRED: PLEASE ENTER FULL NAME")
+    
+    # ចែកអេក្រង់ជា ២ (ម្ខាងបំពេញ ម្ខាងបង្ហាញវិក្កយបត្រ)
+    col_reg, col_inv = st.columns([1, 1.2])
+    
+    with col_reg:
+        with st.form("enroll", clear_on_submit=False):
+            name = st.text_input("Scholar Full Name")
+            level = st.selectbox("Academic Level", ["KINDERGARTEN", "PRIMARY", "SECONDARY", "HIGH SCHOOL"])
+            fee = st.number_input("Tuition Fee ($)", min_value=0.0, value=250.0)
+            payment_now = st.radio("Initial Payment Status", ["UNPAID", "PAID"], horizontal=True)
+            
+            submitted = st.form_submit_button("REGISTER NOW & GENERATE INVOICE")
+            
+            if submitted:
+                if name:
+                    new_id = f"JMI-{len(st.session_state.db)+1:03d}"
+                    new_entry = {
+                        "ID": new_id, 
+                        "Name": name.upper(), 
+                        "Level": level, 
+                        "Fee": fee, 
+                        "Paid": payment_now, 
+                        "Date": datetime.now().strftime("%Y-%m-%d %I:%M %p")
+                    }
+                    st.session_state.db = pd.concat([st.session_state.db, pd.DataFrame([new_entry])], ignore_index=True)
+                    st.session_state.last_invoice = new_entry
+                    st.success(f"SUCCESS: {name.upper()} REGISTERED")
+                else:
+                    st.error("REQUIRED: PLEASE ENTER FULL NAME")
+
+    with col_inv:
+        if 'last_invoice' in st.session_state:
+            inv = st.session_state.last_invoice
+            st.markdown(f"""
+            <div style="background-color: white; padding: 30px; border-radius: 10px; border: 2px solid #D4AF37; color: #002d5a !important;">
+                <div style="text-align: center; border-bottom: 2px solid #D4AF37; padding-bottom: 10px;">
+                    <h2 style="color: #002d5a !important; font-family: 'Cinzel'; margin: 0;">JUNIOR MEDICAL INSTITUTE</h2>
+                    <p style="color: #B8860B !important; font-weight: bold; margin: 5px 0;">OFFICIAL TUITION RECEIPT</p>
+                </div>
+                <div style="padding: 15px 0;">
+                    <table style="width: 100%; font-family: 'Inter'; font-size: 14px; color: #333;">
+                        <tr><td><b>Invoice No:</b></td><td style="text-align: right;">{inv['ID']}</td></tr>
+                        <tr><td><b>Date:</b></td><td style="text-align: right;">{inv['Date']}</td></tr>
+                        <tr><td><b>Scholar:</b></td><td style="text-align: right;">{inv['Name']}</td></tr>
+                        <tr><td><b>Level:</b></td><td style="text-align: right;">{inv['Level']}</td></tr>
+                    </table>
+                </div>
+                <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #D4AF37;">
+                    <table style="width: 100%; font-size: 18px; color: #333;">
+                        <tr style="font-weight: bold;">
+                            <td>TOTAL PAID:</td>
+                            <td style="text-align: right; color: #D4AF37;">${inv['Fee']:,.2f}</td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 12px;">Status:</td>
+                            <td style="text-align: right; font-size: 12px; color: {'green' if inv['Paid'] == 'PAID' else 'red'};">
+                                <b>{inv['Paid']}</b>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="margin-top: 30px; display: flex; justify-content: space-between; font-size: 11px; color: #666;">
+                    <div style="text-align: center;">_________________<br>Customer</div>
+                    <div style="text-align: center;"><b>Dr. CHAN Sokhoeurn</b><br>Director</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button("Close Invoice"):
+                del st.session_state.last_invoice
+                st.rerun()
 
 # --- MODULE 3: SKILL PASSPORT ---
 elif menu == "📔 Skill Passport":
     st.markdown("<h1 class='header-style'>📔 Skill Mastery Passport</h1>", unsafe_allow_html=True)
-    
     if not st.session_state.db.empty:
         sel_student = st.selectbox("Select Student:", st.session_state.db['Name'].tolist())
         st.info(f"Scholar: {sel_student} | Level: {st.session_state.db[st.session_state.db['Name']==sel_student]['Level'].values[0]}")
         
-        # មុខងារបិទ/បើក ទាំងអស់ (Sync Toggle)
+        # មុខងារ Sync Toggle (Check/Uncheck All)
         def sync_lessons():
             state_val = st.session_state[f"master_{sel_student}"]
             for i in range(1, 13):
                 st.session_state[f"L{i}_{sel_student}"] = state_val
 
-        # ប៊ូតុង Check All ដែលមានប្រើ on_change ដើម្បីដោះស្រាយបញ្ហាដោះគ្រីសមិនចេញ
-        st.checkbox("✅ Check all Lesson", 
-                    key=f"master_{sel_student}", 
-                    on_change=sync_lessons)
-        
+        st.checkbox("✅ Check all Lesson", key=f"master_{sel_student}", on_change=sync_lessons)
         st.markdown("---")
         cols = st.columns(2)
-        
         for i in range(1, 13):
             check_key = f"L{i}_{sel_student}"
-            if check_key not in st.session_state:
-                st.session_state[check_key] = False
-                
+            if check_key not in st.session_state: st.session_state[check_key] = False
             with cols[0 if i <= 6 else 1]:
                 st.checkbox(f"Medical Competency Module {i}", key=check_key)
     else:
@@ -182,8 +223,7 @@ elif menu == "📜 Certification":
 # --- MODULE 5: FINANCIAL HUB ---
 elif menu == "💰 Financial Hub":
     st.markdown("<h1 class='header-style'>💰 Financial Management</h1>", unsafe_allow_html=True)
-    st.write("Edit payment statuses directly in the table below and click Save.")
     edited_finance = st.data_editor(st.session_state.db, use_container_width=True)
     if st.button("💾 SAVE FINANCIAL UPDATES"):
         st.session_state.db = edited_finance
-        st.success("FINANCIAL DATA SYNCHRONIZED SUCCESSFULLY")
+        st.success("FINANCIAL DATA SYNCHRONIZED")

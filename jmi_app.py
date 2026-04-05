@@ -104,7 +104,6 @@ elif menu == "🎓 Enrollment":
         name = st.text_input("Scholar Full Name")
         level = st.selectbox("Academic Level", ["KINDERGARTEN", "PRIMARY", "SECONDARY", "HIGH SCHOOL"])
         fee = st.number_input("Tuition Fee ($)", min_value=0.0, value=250.0)
-        
         payment_now = st.radio("Initial Payment Status", ["UNPAID", "PAID"], horizontal=True)
         
         if st.form_submit_button("REGISTER NOW"):
@@ -129,10 +128,16 @@ elif menu == "📔 Skill Passport":
     if not st.session_state.db.empty:
         sel_student = st.selectbox("Select Student:", st.session_state.db['Name'].tolist())
         st.info(f"Scholar: {sel_student} | Level: {st.session_state.db[st.session_state.db['Name']==sel_student]['Level'].values[0]}")
+        
+        # New Feature: Check all Lesson
+        master_check = st.checkbox("✅ Check all Lesson", help="Check this to select all modules at once")
+        
+        st.markdown("---")
         cols = st.columns(2)
         for i in range(1, 13):
             with cols[0 if i <= 6 else 1]:
-                st.checkbox(f"Medical Competency Module {i}", key=f"L{i}_{sel_student}")
+                # If master_check is True, the checkboxes will be forced to True
+                st.checkbox(f"Medical Competency Module {i}", value=master_check, key=f"L{i}_{sel_student}")
     else:
         st.warning("NO DATA FOUND: ENROLL STUDENTS FIRST")
 

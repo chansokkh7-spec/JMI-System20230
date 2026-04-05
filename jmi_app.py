@@ -47,7 +47,6 @@ if 'db' not in st.session_state:
         {"ID": "JMI-004", "Name": "សិស្សគំរូ វិទ្យាល័យ", "Level": "វិទ្យាល័យ", "Enroll_Date": "2026-03-25", "Status": "Active", "Skills": []},
     ])
 
-# បង្កើត State សម្រាប់ចាំការចុច Button ចម្រោះទិន្នន័យ
 if 'filter_level' not in st.session_state:
     st.session_state.filter_level = "ទាំងអស់"
 
@@ -75,7 +74,6 @@ if pwd == "JMI2026":
     if menu == "📊 Dashboard":
         st.title("🏥 JMI Strategic Command Center")
         
-        # ផ្ទាំងស្ថិតិសរុប
         c1, c2, c3 = st.columns(3)
         c1.metric("Total Scholars", len(st.session_state.db))
         c2.metric("Status", "Operational")
@@ -83,20 +81,13 @@ if pwd == "JMI2026":
         
         st.markdown("### 🔍 ច្រោះទិន្នន័យតាមកម្រិតសិក្សា (Quick Filter)")
         
-        # បន្ថែមប៊ូតុងទាំង ៤ តាមការស្នើសុំ (បូករួមទាំងប៊ូតុង "ទាំងអស់" មួយទៀតដើម្បីងាយស្រួលមើលឡើងវិញ)
         b0, b1, b2, b3, b4 = st.columns(5)
-        if b0.button("🌐 ទាំងអស់", use_container_width=True):
-            st.session_state.filter_level = "ទាំងអស់"
-        if b1.button("🧸 មត្តេយ្យ", use_container_width=True):
-            st.session_state.filter_level = "មត្តេយ្យ"
-        if b2.button("🎒 បឋម", use_container_width=True):
-            st.session_state.filter_level = "បឋម"
-        if b3.button("📚 អនុវិទ្យាល័យ", use_container_width=True):
-            st.session_state.filter_level = "អនុវិទ្យាល័យ"
-        if b4.button("🎓 វិទ្យាល័យ", use_container_width=True):
-            st.session_state.filter_level = "វិទ្យាល័យ"
+        if b0.button("🌐 ទាំងអស់", use_container_width=True): st.session_state.filter_level = "ទាំងអស់"
+        if b1.button("🧸 មត្តេយ្យ", use_container_width=True): st.session_state.filter_level = "មត្តេយ្យ"
+        if b2.button("🎒 បឋម", use_container_width=True): st.session_state.filter_level = "បឋម"
+        if b3.button("📚 អនុវិទ្យាល័យ", use_container_width=True): st.session_state.filter_level = "អនុវិទ្យាល័យ"
+        if b4.button("🎓 វិទ្យាល័យ", use_container_width=True): st.session_state.filter_level = "វិទ្យាល័យ"
 
-        # Logic សម្រាប់ចម្រោះទិន្នន័យក្នុងតារាង
         if st.session_state.filter_level == "ទាំងអស់":
             display_db = st.session_state.db
         else:
@@ -111,7 +102,7 @@ if pwd == "JMI2026":
         with st.form("enroll_form", clear_on_submit=True):
             name = st.text_input("Full Name (ឈ្មោះពេញ)")
             sid = st.text_input("Scholar ID (លេខសម្គាល់)")
-            level = st.selectbox("Academic Level", ["មត្តេយ្យ", "បឋម", "អនុវិទ្យាល័យ", "វិទ្យាល័យ"])
+            level = st.selectbox("Academic Level (កម្រិតសិក្សា)", ["មត្តេយ្យ", "បឋម", "អនុវិទ្យាល័យ", "វិទ្យាល័យ"])
             
             if st.form_submit_button("✅ CONFIRM ENROLLMENT"):
                 if name and sid:
@@ -128,19 +119,32 @@ if pwd == "JMI2026":
                 else:
                     st.error("សូមបំពេញព័ត៌មានទាំងឈ្មោះ និងលេខសម្គាល់!")
 
-    # --- ៥.៣ Skill Passport ---
+    # --- ៥.៣ Skill Passport (កន្លែងបែងចែកស្វ័យប្រវត្តិ) ---
     elif menu == "🏅 Skill Passport":
         st.header("🏅 Skill Mastery Passport")
         sel_student = st.selectbox("Select Student:", st.session_state.db['Name'].tolist())
         
+        # ទាញយក Index និងកម្រិតរបស់សិស្សម្នាក់នោះ
         idx = st.session_state.db.index[st.session_state.db['Name'] == sel_student][0]
         student_level = st.session_state.db.at[idx, 'Level']
         
+        # ទាញយកចំនួនមេរៀនតាមកម្រិត ស្វ័យប្រវត្តិ!
         available_skills = get_lessons(student_level)
         current_skills = st.session_state.db.at[idx, 'Skills']
         
-        st.write(f"កម្រិត៖ **{student_level}** (មានចំនួន {len(available_skills)} មេរៀន)")
+        st.markdown(f"### ស្ថានភាពសិក្សារបស់៖ {sel_student}")
+        st.write(f"កម្រិតសិក្សា៖ **{student_level}** (ត្រូវការរៀនចំនួន {len(available_skills)} មេរៀន)")
         
+        # បង្កើតរបារភាគរយ Progress Bar
+        completed_count = len([s for s in current_skills if s in available_skills])
+        total_count = len(available_skills)
+        progress = completed_count / total_count if total_count > 0 else 0
+        
+        st.progress(progress)
+        st.write(f"បានបញ្ចប់៖ {completed_count} / {total_count} មេរៀន")
+        st.markdown("---")
+        
+        # បង្ហាញ Checkbox តាមចំនួនមេរៀនដែលបានបែងចែក
         new_selection = []
         col1, col2 = st.columns(2)
         for i, skill in enumerate(available_skills):
@@ -192,4 +196,4 @@ if pwd == "JMI2026":
                 st.markdown(certificate_html, unsafe_allow_html=True)
 else:
     st.title("🏥 JMI Strategic Command Portal")
-    st.info("🔒 សូមបញ្ចូល Password 'JMI2026' ដើម្បីបើកដំណើរការប្រព័ន្ធ។")
+    st.info("🔒 សូមបញ្ចូល Password 'JMI2026' ដើម្បីចាប់ផ្ដើម។")

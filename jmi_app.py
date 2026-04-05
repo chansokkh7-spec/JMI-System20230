@@ -119,12 +119,11 @@ if pwd == "JMI2026":
                 else:
                     st.error("សូមបំពេញព័ត៌មានទាំងឈ្មោះ និងលេខសម្គាល់!")
 
-    # --- ៥.៣ Skill Passport (កែសម្រួលថ្មី៖ បែងចែកតាមកម្រិត) ---
+    # --- ៥.៣ Skill Passport ---
     elif menu == "🏅 Skill Passport":
         st.header("🏅 Skill Mastery Passport")
         
-        # បន្ថែមការជ្រើសរើសកម្រិត ដើម្បីចម្រោះឈ្មោះសិស្ស
-        sel_level = st.selectbox("Select Level (ជ្រើសរើសកម្រិតសិក្សា):", ["ទាំងអស់", "មត្តេយ្យ", "បឋម", "អនុវិទ្យាល័យ", "វិទ្យាល័យ"])
+        sel_level = st.selectbox("Select Level (ជ្រើសរើសកម្រិតសិក្សា):", ["ទាំងអស់", "មត្តេយ្យ", "បឋម", "អនុវិទ្យាល័យ", "វិទ្យាល័យ"], key="passport_level_sel")
         
         if sel_level == "ទាំងអស់":
             filtered_students = st.session_state.db
@@ -134,11 +133,9 @@ if pwd == "JMI2026":
         if filtered_students.empty:
             st.warning(f"មិនទាន់មានសិស្សនៅក្នុងកម្រិត '{sel_level}' ទេ។")
         else:
-            # បង្ហាញឈ្មោះសិស្ស ភ្ជាប់ជាមួយកម្រិត ដើម្បីងាយចំណាំ
             student_list = filtered_students.apply(lambda x: f"{x['Name']} ({x['Level']})", axis=1).tolist()
-            sel_student_str = st.selectbox("Select Student (ជ្រើសរើសសិស្ស):", student_list)
+            sel_student_str = st.selectbox("Select Student (ជ្រើសរើសសិស្ស):", student_list, key="passport_student_sel")
             
-            # ទាញយក index ពិតប្រាកដក្នុង Database
             selected_idx = filtered_students.index[student_list.index(sel_student_str)]
             
             student_name = st.session_state.db.at[selected_idx, 'Name']
@@ -149,7 +146,6 @@ if pwd == "JMI2026":
             st.markdown(f"### ស្ថានភាពសិក្សារបស់៖ {student_name}")
             st.write(f"កម្រិតសិក្សា៖ **{student_level}** (ត្រូវការរៀនចំនួន {len(available_skills)} មេរៀន)")
             
-            # របារភាគរយ Progress Bar
             completed_count = len([s for s in current_skills if s in available_skills])
             total_count = len(available_skills)
             progress = completed_count / total_count if total_count > 0 else 0
@@ -158,12 +154,10 @@ if pwd == "JMI2026":
             st.write(f"បានបញ្ចប់៖ {completed_count} / {total_count} មេរៀន")
             st.markdown("---")
             
-            # បង្ហាញ Checkbox
             new_selection = []
             col1, col2 = st.columns(2)
             for i, skill in enumerate(available_skills):
                 with (col1 if i % 2 == 0 else col2):
-                    # ប្រើ Key ពិសេសជៀសវាងការជាន់គ្នា
                     if st.checkbox(skill, value=(skill in current_skills), key=f"{selected_idx}_{skill}"):
                         new_selection.append(skill)
             
@@ -172,43 +166,59 @@ if pwd == "JMI2026":
                 st.success(f"Updated skills for {student_name}!")
                 st.rerun()
 
-    # --- ៥.៤ Certification ---
+    # --- ៥.៤ Certification (កែសម្រួលឱ្យដូច Skill Passport) ---
     elif menu == "📜 Certification":
         st.header("Certification Generator")
-        target = st.selectbox("Select Recipient:", st.session_state.db['Name'].tolist())
         
-        s_info = st.session_state.db[st.session_state.db['Name'] == target].iloc[0]
+        # បន្ថែមការជ្រើសរើសកម្រិត ដើម្បីចម្រោះឈ្មោះសិស្ស
+        sel_level_cert = st.selectbox("Select Level (ជ្រើសរើសកម្រិតសិក្សា):", ["ទាំងអស់", "មត្តេយ្យ", "បឋម", "អនុវិទ្យាល័យ", "វិទ្យាល័យ"], key="cert_level_sel")
         
-        if st.button("🌟 GENERATE CERTIFICATE"):
-            if len(s_info['Skills']) == 0:
-                st.warning("Scholar នេះមិនទាន់ទទួលបាន Skill ណាមួយនៅឡើយទេ។")
-            else:
-                st.balloons()
-                stars_html = "".join(['<span class="star-gold">★</span>' for _ in range(len(s_info['Skills']))])
-                
-                certificate_html = f"""
-                <div class="cert-paper">
-                    <div class="cert-border">
-                        <p style="letter-spacing: 5px; color: #555; font-size: 12px; margin-bottom:10px;">JUNIOR MEDICAL INSTITUTE</p>
-                        <h1 class="cert-header">CERTIFICATE</h1>
-                        <div style="margin: 10px 0;">{stars_html}</div>
-                        <p class="cert-text" style="font-style: italic;">This award is proudly presented to</p>
-                        <h2 class="student-name">{s_info['Name']}</h2>
-                        <p class="cert-text">for successfully completing <b>{len(s_info['Skills'])} lessons</b><br>in <b>Medical Foundation Pathway</b> ({s_info['Level']})</p>
-                        <div style="margin-top: 50px; display: flex; justify-content: space-around;">
-                            <div style="text-align:center;">
-                                <p style="font-size:14px; margin-bottom:5px;">{datetime.now().strftime("%d %B %Y")}</p>
-                                <div class="sig-box">DATE</div>
-                            </div>
-                            <div style="text-align:center;">
-                                <p class="signature">Dr. Chan Sokhoeurn</p>
-                                <div class="sig-box">ACADEMIC DIRECTOR</div>
+        if sel_level_cert == "ទាំងអស់":
+            filtered_students_cert = st.session_state.db
+        else:
+            filtered_students_cert = st.session_state.db[st.session_state.db['Level'] == sel_level_cert]
+            
+        if filtered_students_cert.empty:
+            st.warning(f"មិនទាន់មានសិស្សនៅក្នុងកម្រិត '{sel_level_cert}' ទេ។")
+        else:
+            # បង្ហាញឈ្មោះសិស្ស ភ្ជាប់ជាមួយកម្រិត
+            student_list_cert = filtered_students_cert.apply(lambda x: f"{x['Name']} ({x['Level']})", axis=1).tolist()
+            sel_student_str_cert = st.selectbox("Select Recipient (ជ្រើសរើសសិស្ស):", student_list_cert, key="cert_student_sel")
+            
+            # ទាញយក index ពិតប្រាកដក្នុង Database
+            selected_idx_cert = filtered_students_cert.index[student_list_cert.index(sel_student_str_cert)]
+            s_info = st.session_state.db.loc[selected_idx_cert]
+            
+            if st.button("🌟 GENERATE CERTIFICATE"):
+                if len(s_info['Skills']) == 0:
+                    st.warning("Scholar នេះមិនទាន់ទទួលបាន Skill ណាមួយនៅឡើយទេ។")
+                else:
+                    st.balloons()
+                    stars_html = "".join(['<span class="star-gold">★</span>' for _ in range(len(s_info['Skills']))])
+                    
+                    certificate_html = f"""
+                    <div class="cert-paper">
+                        <div class="cert-border">
+                            <p style="letter-spacing: 5px; color: #555; font-size: 12px; margin-bottom:10px;">JUNIOR MEDICAL INSTITUTE</p>
+                            <h1 class="cert-header">CERTIFICATE</h1>
+                            <div style="margin: 10px 0;">{stars_html}</div>
+                            <p class="cert-text" style="font-style: italic;">This award is proudly presented to</p>
+                            <h2 class="student-name">{s_info['Name']}</h2>
+                            <p class="cert-text">for successfully completing <b>{len(s_info['Skills'])} lessons</b><br>in <b>Medical Foundation Pathway</b> ({s_info['Level']})</p>
+                            <div style="margin-top: 50px; display: flex; justify-content: space-around;">
+                                <div style="text-align:center;">
+                                    <p style="font-size:14px; margin-bottom:5px;">{datetime.now().strftime("%d %B %Y")}</p>
+                                    <div class="sig-box">DATE</div>
+                                </div>
+                                <div style="text-align:center;">
+                                    <p class="signature">Dr. Chan Sokhoeurn</p>
+                                    <div class="sig-box">ACADEMIC DIRECTOR</div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                """
-                st.markdown(certificate_html, unsafe_allow_html=True)
+                    """
+                    st.markdown(certificate_html, unsafe_allow_html=True)
 else:
     st.title("🏥 JMI Strategic Command Portal")
     st.info("🔒 សូមបញ្ចូល Password 'JMI2026' ដើម្បីចាប់ផ្ដើម។")

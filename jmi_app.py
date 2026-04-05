@@ -83,12 +83,12 @@ if pwd == "JMI2026":
         else:
             return [f"មេរៀនទី {i}" for i in range(1, 13)]
 
-    # --- ៥.១ Dashboard (ស្ដង់ដារអន្តរជាតិ & CRUD) ---
+    # --- ៥.១ Dashboard (ស្ដង់ដារអន្តរជាតិ & CRUD គ្មាន Error) ---
     if menu == "📊 Dashboard":
         st.title("🏥 JMI Strategic Command Center")
         st.markdown("គ្រប់គ្រងស្ថិតិ និងទិន្នន័យសិស្សជាសកល")
         
-        # Dashboard KPI Cards (UI ទំនើប)
+        # Dashboard KPI Cards
         total_scholars = len(st.session_state.db)
         active_scholars = len(st.session_state.db[st.session_state.db['Status'] == 'Active'])
         
@@ -112,19 +112,21 @@ if pwd == "JMI2026":
 
         st.markdown("---")
         
-        # CRUD Section (ចុចកែ ឬលុបទិន្នន័យផ្ទាល់)
+        # CRUD Section
         st.markdown("### ⚙️ Data Management Hub (រក្សាទុក កែ និងលុប)")
-        st.info("💡 លោកអ្នកអាចចុចលើប្រអប់ដើម្បីកែប្រែ ឬចុចលើជួរដេក រួចចុចគ្រាប់ចុច `Delete` លើ Keyboard ដើម្បីលុប (ឬប្រើប៊ូតុងខាងស្ដាំតារាង)។")
+        st.info("💡 លោកអ្នកអាចចុចលើប្រអប់ដើម្បីកែប្រែ ឬចុចលើជួរដេក រួចចុចគ្រាប់ចុច `Delete` លើ Keyboard ដើម្បីលុប។")
         
-        # ប្រើប្រាស់ st.data_editor ជំនួស st.dataframe ធម្មតា
+        # ដំណោះស្រាយ៖ យកតែកូឡោនព័ត៌មានទូទៅមកបង្ហាញក្នុង Editor (ដក Skills ចេញសិនដើម្បីកុំឱ្យ Error)
+        cols_to_edit = ["ID", "Name", "Level", "Enroll_Date", "Status"]
+        df_to_edit = st.session_state.db[cols_to_edit]
+        
         edited_data = st.data_editor(
-            st.session_state.db, 
-            num_rows="dynamic", # អនុញ្ញាតឱ្យបន្ថែម និងលុបជួរដេក
+            df_to_edit, 
+            num_rows="dynamic",
             use_container_width=True,
             column_config={
                 "Status": st.column_config.SelectboxColumn(
                     "Status",
-                    help="ស្ថានភាពសិក្សា",
                     options=["Active", "Inactive", "Graduated"],
                     required=True
                 ),
@@ -132,21 +134,28 @@ if pwd == "JMI2026":
                     "Level",
                     options=["មត្តេយ្យ", "បឋម", "អនុវិទ្យាល័យ", "វិទ្យាល័យ"],
                     required=True
-                ),
-                "Enroll_Date": st.column_config.DateColumn(
-                    "Enroll Date",
-                    format="YYYY-MM-DD"
                 )
             }
         )
         
-        # ប៊ូតុងរក្សាទុក
+        # ប៊ូតុងរក្សាទុក៖ វានឹងទាញយក Skills ពី Database ចាស់ មកផ្គូរផ្គងនឹងទិន្នន័យដែលបានកែថ្មីវិញ
         if st.button("💾 រក្សាទុកការផ្លាស់ប្តូរ (Save Changes)", type="primary"):
+            # បង្កើត Map សម្រាប់រក្សាទុក Skills របស់សិស្សម្នាក់ៗតាម ID
+            skills_map = dict(zip(st.session_state.db["ID"], st.session_state.db["Skills"]))
+            
+            # ផ្គូរផ្គង Skills ចូលទៅក្នុងទិន្នន័យថ្មី
+            new_skills = []
+            for s_id in edited_data["ID"]:
+                new_skills.append(skills_map.get(s_id, []))
+            
+            edited_data["Skills"] = new_skills
+            
+            # រក្សាទុកចូលទៅក្នុង Session State វិញ
             st.session_state.db = edited_data
             st.success("🎉 ទិន្នន័យត្រូវបានរក្សាទុកដោយជោគជ័យ!")
             st.rerun()
 
-    # --- ៥.២ Enrollment (ចុះឈ្មោះ) ---
+    # --- ៥.២ Enrollment ---
     elif menu == "🎓 Enrollment":
         st.header("Register New Scholar")
         with st.form("enroll_form", clear_on_submit=True):
@@ -173,7 +182,7 @@ if pwd == "JMI2026":
     elif menu == "🏅 Skill Passport":
         st.header("🏅 Skill Mastery Passport")
         
-        sel_level = st.selectbox("Select Level (ជ្រើសរើសកម្រិតសិក្សា):", ["ទាំងអស់", "មត្តេយ្យ", "បឋម", "អនុវិទ្យាល័យ", "វិទ្យាល័យ"], key="passport_level_sel")
+        sel_level = st.selectbox("Select Level:", ["ទាំងអស់", "មត្តេយ្យ", "បឋម", "អនុវិទ្យាល័យ", "វិទ្យាល័យ"], key="passport_level_sel")
         
         if sel_level == "ទាំងអស់":
             filtered_students = st.session_state.db
@@ -184,7 +193,7 @@ if pwd == "JMI2026":
             st.warning(f"មិនទាន់មានសិស្សនៅក្នុងកម្រិត '{sel_level}' ទេ។")
         else:
             student_list = filtered_students.apply(lambda x: f"{x['Name']} ({x['Level']})", axis=1).tolist()
-            sel_student_str = st.selectbox("Select Student (ជ្រើសរើសសិស្ស):", student_list, key="passport_student_sel")
+            sel_student_str = st.selectbox("Select Student:", student_list, key="passport_student_sel")
             
             selected_idx = filtered_students.index[student_list.index(sel_student_str)]
             
@@ -194,7 +203,6 @@ if pwd == "JMI2026":
             current_skills = st.session_state.db.at[selected_idx, 'Skills']
             
             st.markdown(f"### ស្ថានភាពសិក្សារបស់៖ {student_name}")
-            st.write(f"កម្រិតសិក្សា៖ **{student_level}** (ត្រូវការរៀនចំនួន {len(available_skills)} មេរៀន)")
             
             completed_count = len([s for s in current_skills if s in available_skills])
             total_count = len(available_skills)
@@ -220,7 +228,7 @@ if pwd == "JMI2026":
     elif menu == "📜 Certification":
         st.header("Certification Generator")
         
-        sel_level_cert = st.selectbox("Select Level (ជ្រើសរើសកម្រិតសិក្សា):", ["ទាំងអស់", "មត្តេយ្យ", "បឋម", "អនុវិទ្យាល័យ", "វិទ្យាល័យ"], key="cert_level_sel")
+        sel_level_cert = st.selectbox("Select Level:", ["ទាំងអស់", "មត្តេយ្យ", "បឋម", "អនុវិទ្យាល័យ", "វិទ្យាល័យ"], key="cert_level_sel")
         
         if sel_level_cert == "ទាំងអស់":
             filtered_students_cert = st.session_state.db
@@ -231,7 +239,7 @@ if pwd == "JMI2026":
             st.warning(f"មិនទាន់មានសិស្សនៅក្នុងកម្រិត '{sel_level_cert}' ទេ។")
         else:
             student_list_cert = filtered_students_cert.apply(lambda x: f"{x['Name']} ({x['Level']})", axis=1).tolist()
-            sel_student_str_cert = st.selectbox("Select Recipient (ជ្រើសរើសសិស្ស):", student_list_cert, key="cert_student_sel")
+            sel_student_str_cert = st.selectbox("Select Recipient:", student_list_cert, key="cert_student_sel")
             
             selected_idx_cert = filtered_students_cert.index[student_list_cert.index(sel_student_str_cert)]
             s_info = st.session_state.db.loc[selected_idx_cert]

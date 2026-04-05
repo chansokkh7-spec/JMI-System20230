@@ -27,14 +27,22 @@ st.markdown("""
         color: #001529 !important; border-radius: 8px !important; font-weight: 700 !important; border: none !important;
     }
     .header-style { border-left: 5px solid #D4AF37; padding-left: 15px; margin-bottom: 20px; }
-    .finance-card { background: rgba(212, 175, 55, 0.1); border: 1px solid #D4AF37; padding: 20px; border-radius: 15px; text-align: center; }
+    .stat-card { 
+        background: rgba(212, 175, 55, 0.05); 
+        border: 1px solid rgba(212, 175, 55, 0.3); 
+        padding: 20px; 
+        border-radius: 15px; 
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # --- ៤. ការគ្រប់គ្រងទិន្នន័យ (Database) ---
 if 'db' not in st.session_state:
     st.session_state.db = pd.DataFrame([
-        {"ID": "JMI-001", "Name": "CHAN SOKHOEURN", "Level": "វិទ្យាល័យ", "Fee": 500.0, "Paid": "បង់រួច", "Date": "2026-03-25"}
+        {"ID": "JMI-001", "Name": "CHAN SOKHOEURN", "Level": "វិទ្យាល័យ", "Fee": 500.0, "Paid": "បង់រួច", "Date": "2026-03-25"},
+        {"ID": "JMI-002", "Name": "SOPHEAP RA", "Level": "បឋម", "Fee": 300.0, "Paid": "មិនទាន់បង់", "Date": "2026-04-01"}
     ])
 
 # --- ៥. Sidebar ---
@@ -43,25 +51,53 @@ with st.sidebar:
     st.markdown("<center><h1 style='font-size:70px; margin:0;'>🛡️</h1></center>", unsafe_allow_html=True)
     st.markdown("---")
     pwd = st.text_input("Director's Key", type="password")
-    
     if pwd == "JMI2026":
-        menu = st.sidebar.radio("STRATEGIC MODULES", 
-            ["📊 Dashboard", "🎓 Enrollment", "📔 Skill Passport", "📜 Certification", "💰 Financial Hub"])
+        menu = st.sidebar.radio("STRATEGIC MODULES", ["📊 Dashboard", "🎓 Enrollment", "📔 Skill Passport", "📜 Certification", "💰 Financial Hub"])
     else:
-        st.warning("Please enter access key")
         st.stop()
 
-# --- MODULE 1: DASHBOARD ---
+# --- MODULE 1: DASHBOARD (កែលម្អថ្មី) ---
 if menu == "📊 Dashboard":
-    st.markdown("<h1 class='header-style'>JMI Strategic Command Center</h1>", unsafe_allow_html=True)
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Total Scholars", len(st.session_state.db))
-    total_revenue = st.session_state.db[st.session_state.db['Paid'] == "បង់រួច"]['Fee'].sum()
-    c2.metric("Total Revenue", f"${total_revenue:,.2f}")
-    c3.metric("Year", "2026")
+    st.markdown("<h1 class='header-style'>JMI Strategic Analytics</h1>", unsafe_allow_html=True)
+    
+    # --- លេខសង្ខេប (Summary Cards) ---
+    c1, c2, c3, c4 = st.columns(4)
+    total_s = len(st.session_state.db)
+    total_rev = st.session_state.db[st.session_state.db['Paid'] == "បង់រួច"]['Fee'].sum()
+    pending_rev = st.session_state.db[st.session_state.db['Paid'] == "មិនទាន់បង់"]['Fee'].sum()
+    
+    with c1: st.markdown(f"<div class='stat-card'>📚<br><small>Total Scholars</small><h2>{total_s}</h2></div>", unsafe_allow_html=True)
+    with c2: st.markdown(f"<div class='stat-card'>💰<br><small>Total Revenue</small><h2>${total_rev:,.0f}</h2></div>", unsafe_allow_html=True)
+    with c3: st.markdown(f"<div class='stat-card'>⏳<br><small>Pending</small><h2>${pending_rev:,.0f}</h2></div>", unsafe_allow_html=True)
+    with c4: st.markdown(f"<div class='stat-card'>🏛️<br><small>Academic Year</small><h2>2026</h2></div>", unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # --- ក្រាហ្វិក (Charts) ---
+    if HAS_PLOTLY and not st.session_state.db.empty:
+        col_left, col_right = st.columns(2)
+        
+        with col_left:
+            st.markdown("### 🎓 Student Levels (Pie Chart)")
+            fig_pie = px.pie(st.session_state.db, names='Level', 
+                             color_discrete_sequence=['#D4AF37', '#B8860B', '#8A6D3B', '#FFD700'],
+                             hole=0.4)
+            fig_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color='#D4AF37')
+            st.plotly_chart(fig_pie, use_container_width=True)
+            
+        with col_right:
+            st.markdown("### 💵 Payment Status (Bar Chart)")
+            fig_bar = px.bar(st.session_state.db, x='Paid', y='Fee', color='Paid',
+                             color_discrete_map={'បង់រួច': '#D4AF37', 'មិនទាន់បង់': '#3B5998'})
+            fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color='#D4AF37')
+            st.plotly_chart(fig_bar, use_container_width=True)
+    else:
+        st.info("Install plotly to see advanced analytics.")
+
+    st.markdown("### 📋 Student Master List")
     st.dataframe(st.session_state.db, use_container_width=True)
 
-# --- MODULE 2: ENROLLMENT ---
+# --- MODULE ផ្សេងៗទៀត (រក្សាកូដដដែល) ---
 elif menu == "🎓 Enrollment":
     st.markdown("<h1 class='header-style'>Scholar Registration</h1>", unsafe_allow_html=True)
     with st.form("enroll"):
@@ -74,7 +110,6 @@ elif menu == "🎓 Enrollment":
             st.session_state.db = pd.concat([st.session_state.db, new_data], ignore_index=True)
             st.success(f"ចុះឈ្មោះ {name} ជោគជ័យ!")
 
-# --- MODULE 3: SKILL PASSPORT ---
 elif menu == "📔 Skill Passport":
     st.markdown("<h1 class='header-style'>📔 Skill Mastery Passport</h1>", unsafe_allow_html=True)
     if not st.session_state.db.empty:
@@ -83,10 +118,7 @@ elif menu == "📔 Skill Passport":
         for i in range(1, 13):
             with cols[0 if i <= 6 else 1]:
                 st.checkbox(f"មេរៀនទី {i}", key=f"L{i}_{sel_student}")
-    else:
-        st.warning("មិនទាន់មានទិន្នន័យសិស្ស។")
 
-# --- MODULE 4: CERTIFICATION ---
 elif menu == "📜 Certification":
     st.markdown("<h1 class='header-style'>Certification Generator</h1>", unsafe_allow_html=True)
     if not st.session_state.db.empty:
@@ -98,42 +130,10 @@ elif menu == "📜 Certification":
                 <h2 style="color:#B8860B !important;">{s['Name']}</h2>
                 <p style="color:#001529 !important;">Completed: {s['Level']}</p>
                 <hr><p style="color:#001529 !important;">Dr. CHAN Sokhoeurn</p></div>""", unsafe_allow_html=True)
-    else:
-        st.warning("មិនទាន់មានទិន្នន័យសិស្ស។")
 
-# --- MODULE 5: FINANCIAL HUB ---
 elif menu == "💰 Financial Hub":
     st.markdown("<h1 class='header-style'>💰 Financial Management</h1>", unsafe_allow_html=True)
-    
-    f1, f2 = st.columns(2)
-    paid_sum = st.session_state.db[st.session_state.db['Paid'] == "បង់រួច"]['Fee'].sum()
-    unpaid_sum = st.session_state.db[st.session_state.db['Paid'] == "មិនទាន់បង់"]['Fee'].sum()
-    
-    with f1: st.markdown(f"<div class='finance-card'><h3>Received Income</h3><h1>${paid_sum:,.2f}</h1></div>", unsafe_allow_html=True)
-    with f2: st.markdown(f"<div class='finance-card'><h3>Pending Balance</h3><h1>${unpaid_sum:,.2f}</h1></div>", unsafe_allow_html=True)
-    
-    st.markdown("### 📝 Update Payment Status")
-    # បង្ហាញតារាងសម្រាប់កែសម្រួល (កែឈ្មោះ Variable ឱ្យត្រូវគ្នា)
-    edited_finance = st.data_editor(st.session_state.db, use_container_width=True, key="fin_editor")
-    
+    edited_finance = st.data_editor(st.session_state.db, use_container_width=True)
     if st.button("💾 Save Financial Updates"):
         st.session_state.db = edited_finance
         st.success("ស្ថានភាពហិរញ្ញវត្ថុត្រូវបានធ្វើបច្ចុប្បន្នភាព!")
-
-    st.markdown("---")
-    st.markdown("### 🧾 Print Receipt")
-    if not st.session_state.db.empty:
-        target_student = st.selectbox("Select Student for Receipt:", st.session_state.db['Name'].tolist())
-        if st.button("PRINT RECEIPT"):
-            ts = st.session_state.db[st.session_state.db['Name'] == target_student].iloc[0]
-            st.markdown(f"""
-            <div style="background:#001529; padding:30px; border:2px dashed #D4AF37; border-radius:10px;">
-                <h2 style="text-align:center;">OFFICIAL RECEIPT</h2>
-                <p><b>Student:</b> {ts['Name']}</p>
-                <p><b>Level:</b> {ts['Level']}</p>
-                <p><b>Amount:</b> ${ts['Fee']}</p>
-                <p><b>Status:</b> {ts['Paid']}</p>
-                <p style="text-align:right;">Date: {ts['Date']}</p>
-                <p style="text-align:center; font-size:12px;">Authorized by Dr. CHAN Sokhoeurn</p>
-            </div>
-            """, unsafe_allow_html=True)

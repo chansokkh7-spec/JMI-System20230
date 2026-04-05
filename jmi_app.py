@@ -34,7 +34,7 @@ st.markdown("""
 # --- ៤. ការគ្រប់គ្រងទិន្នន័យ (Database) ---
 if 'db' not in st.session_state:
     st.session_state.db = pd.DataFrame([
-        {"ID": "JMI-001", "Name": "CHAN SOKHOEURN", "Level": "វិទ្យាល័យ", "Fee": 500, "Paid": "បង់រួច", "Date": "2026-03-25"}
+        {"ID": "JMI-001", "Name": "CHAN SOKHOEURN", "Level": "វិទ្យាល័យ", "Fee": 500.0, "Paid": "បង់រួច", "Date": "2026-03-25"}
     ])
 
 # --- ៥. Sidebar ---
@@ -48,6 +48,7 @@ with st.sidebar:
         menu = st.sidebar.radio("STRATEGIC MODULES", 
             ["📊 Dashboard", "🎓 Enrollment", "📔 Skill Passport", "📜 Certification", "💰 Financial Hub"])
     else:
+        st.warning("Please enter access key")
         st.stop()
 
 # --- MODULE 1: DASHBOARD ---
@@ -55,7 +56,6 @@ if menu == "📊 Dashboard":
     st.markdown("<h1 class='header-style'>JMI Strategic Command Center</h1>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
     c1.metric("Total Scholars", len(st.session_state.db))
-    # គណនាចំណូលសរុប
     total_revenue = st.session_state.db[st.session_state.db['Paid'] == "បង់រួច"]['Fee'].sum()
     c2.metric("Total Revenue", f"${total_revenue:,.2f}")
     c3.metric("Year", "2026")
@@ -67,38 +67,44 @@ elif menu == "🎓 Enrollment":
     with st.form("enroll"):
         name = st.text_input("ឈ្មោះសិស្ស (Full Name)")
         level = st.selectbox("កម្រិតសិក្សា", ["មត្តេយ្យ", "បឋម", "អនុវិទ្យាល័យ", "វិទ្យាល័យ"])
-        fee = st.number_input("តម្លៃសិក្សា ($)", min_value=0, value=250)
+        fee = st.number_input("តម្លៃសិក្សា ($)", min_value=0.0, value=250.0)
         if st.form_submit_button("REGISTER NOW"):
-            new_data = {"ID": f"JMI-{len(st.session_state.db)+1:03d}", "Name": name.upper(), "Level": level, "Fee": fee, "Paid": "មិនទាន់បង់", "Date": datetime.now().strftime("%Y-%m-%d")}
-            st.session_state.db = pd.concat([st.session_state.db, pd.DataFrame([new_data])], ignore_index=True)
+            new_id = f"JMI-{len(st.session_state.db)+1:03d}"
+            new_data = pd.DataFrame([{"ID": new_id, "Name": name.upper(), "Level": level, "Fee": fee, "Paid": "មិនទាន់បង់", "Date": datetime.now().strftime("%Y-%m-%d")}])
+            st.session_state.db = pd.concat([st.session_state.db, new_data], ignore_index=True)
             st.success(f"ចុះឈ្មោះ {name} ជោគជ័យ!")
 
 # --- MODULE 3: SKILL PASSPORT ---
 elif menu == "📔 Skill Passport":
     st.markdown("<h1 class='header-style'>📔 Skill Mastery Passport</h1>", unsafe_allow_html=True)
-    sel_student = st.selectbox("Select Student:", st.session_state.db['Name'].tolist())
-    cols = st.columns(2)
-    for i in range(1, 13):
-        with cols[0 if i <= 6 else 1]:
-            st.checkbox(f"មេរៀនទី {i}", key=f"L{i}_{sel_student}")
+    if not st.session_state.db.empty:
+        sel_student = st.selectbox("Select Student:", st.session_state.db['Name'].tolist())
+        cols = st.columns(2)
+        for i in range(1, 13):
+            with cols[0 if i <= 6 else 1]:
+                st.checkbox(f"មេរៀនទី {i}", key=f"L{i}_{sel_student}")
+    else:
+        st.warning("មិនទាន់មានទិន្នន័យសិស្ស។")
 
 # --- MODULE 4: CERTIFICATION ---
 elif menu == "📜 Certification":
     st.markdown("<h1 class='header-style'>Certification Generator</h1>", unsafe_allow_html=True)
-    rec_name = st.selectbox("Select Recipient:", st.session_state.db['Name'].tolist())
-    if st.button("GENERATE"):
-        s = st.session_state.db[st.session_state.db['Name'] == rec_name].iloc[0]
-        st.markdown(f"""<div style="background:white; padding:40px; border:15px solid #D4AF37; text-align:center; color:#001529 !important;">
-            <h1 style="color:#D4AF37 !important;">JUNIOR MEDICAL INSTITUTE</h1>
-            <h2 style="color:#B8860B !important;">{s['Name']}</h2>
-            <p style="color:#001529 !important;">Completed: {s['Level']}</p>
-            <hr><p style="color:#001529 !important;">Dr. CHAN Sokhoeurn</p></div>""", unsafe_allow_html=True)
+    if not st.session_state.db.empty:
+        rec_name = st.selectbox("Select Recipient:", st.session_state.db['Name'].tolist())
+        if st.button("GENERATE"):
+            s = st.session_state.db[st.session_state.db['Name'] == rec_name].iloc[0]
+            st.markdown(f"""<div style="background:white; padding:40px; border:15px solid #D4AF37; text-align:center;">
+                <h1 style="color:#D4AF37 !important;">JUNIOR MEDICAL INSTITUTE</h1>
+                <h2 style="color:#B8860B !important;">{s['Name']}</h2>
+                <p style="color:#001529 !important;">Completed: {s['Level']}</p>
+                <hr><p style="color:#001529 !important;">Dr. CHAN Sokhoeurn</p></div>""", unsafe_allow_html=True)
+    else:
+        st.warning("មិនទាន់មានទិន្នន័យសិស្ស។")
 
-# --- MODULE 5: FINANCIAL HUB (បន្ថែមថ្មី) ---
+# --- MODULE 5: FINANCIAL HUB ---
 elif menu == "💰 Financial Hub":
     st.markdown("<h1 class='header-style'>💰 Financial Management</h1>", unsafe_allow_html=True)
     
-    # បង្ហាញស្ថិតិហិរញ្ញវត្ថុ
     f1, f2 = st.columns(2)
     paid_sum = st.session_state.db[st.session_state.db['Paid'] == "បង់រួច"]['Fee'].sum()
     unpaid_sum = st.session_state.db[st.session_state.db['Paid'] == "មិនទាន់បង់"]['Fee'].sum()
@@ -107,26 +113,27 @@ elif menu == "💰 Financial Hub":
     with f2: st.markdown(f"<div class='finance-card'><h3>Pending Balance</h3><h1>${unpaid_sum:,.2f}</h1></div>", unsafe_allow_html=True)
     
     st.markdown("### 📝 Update Payment Status")
-    edited_finance = st.data_editor(st.session_state.db[["ID", "Name", "Fee", "Paid"]], use_container_width=True)
+    # បង្ហាញតារាងសម្រាប់កែសម្រួល (កែឈ្មោះ Variable ឱ្យត្រូវគ្នា)
+    edited_finance = st.data_editor(st.session_state.db, use_container_width=True, key="fin_editor")
     
     if st.button("💾 Save Financial Updates"):
-        st.session_state.db.update(edited_df)
+        st.session_state.db = edited_finance
         st.success("ស្ថានភាពហិរញ្ញវត្ថុត្រូវបានធ្វើបច្ចុប្បន្នភាព!")
 
-    # បោះពុម្ពវិក្កយបត្រ
     st.markdown("---")
     st.markdown("### 🧾 Print Receipt")
-    target_student = st.selectbox("Select Student for Receipt:", st.session_state.db['Name'].tolist())
-    if st.button("PRINT RECEIPT"):
-        ts = st.session_state.db[st.session_state.db['Name'] == target_student].iloc[0]
-        st.markdown(f"""
-        <div style="background:#001529; padding:30px; border:2px dashed #D4AF37; border-radius:10px;">
-            <h2 style="text-align:center;">OFFICIAL RECEIPT</h2>
-            <p><b>Student:</b> {ts['Name']}</p>
-            <p><b>Level:</b> {ts['Level']}</p>
-            <p><b>Amount:</b> ${ts['Fee']}</p>
-            <p><b>Status:</b> {ts['Paid']}</p>
-            <p style="text-align:right;">Date: {ts['Date']}</p>
-            <p style="text-align:center; font-size:12px;">Authorized by Dr. CHAN Sokhoeurn</p>
-        </div>
-        """, unsafe_allow_html=True)
+    if not st.session_state.db.empty:
+        target_student = st.selectbox("Select Student for Receipt:", st.session_state.db['Name'].tolist())
+        if st.button("PRINT RECEIPT"):
+            ts = st.session_state.db[st.session_state.db['Name'] == target_student].iloc[0]
+            st.markdown(f"""
+            <div style="background:#001529; padding:30px; border:2px dashed #D4AF37; border-radius:10px;">
+                <h2 style="text-align:center;">OFFICIAL RECEIPT</h2>
+                <p><b>Student:</b> {ts['Name']}</p>
+                <p><b>Level:</b> {ts['Level']}</p>
+                <p><b>Amount:</b> ${ts['Fee']}</p>
+                <p><b>Status:</b> {ts['Paid']}</p>
+                <p style="text-align:right;">Date: {ts['Date']}</p>
+                <p style="text-align:center; font-size:12px;">Authorized by Dr. CHAN Sokhoeurn</p>
+            </div>
+            """, unsafe_allow_html=True)

@@ -38,18 +38,18 @@ with st.sidebar:
         st.warning("🔒 SECURE ACCESS ONLY")
         st.stop()
 
-# --- MODULE 4: CERTIFICATION (FIXED HTML DISPLAY) ---
+# --- MODULE 4: CERTIFICATION ---
 if choice == "Certification":
     st.title("📜 Official Certification Hub")
     
     if not st.session_state.db.empty:
-        # ប្រអប់បញ្ចូលឈ្មោះអ្នកចុះហត្ថលេខា
-        st.subheader("🖋️ Signature Configuration")
-        c_sig1, c_sig2 = st.columns(2)
-        with c_sig1:
-            dir_name = st.text_input("Director Name", value="DR. CHAN SOKHOEURN")
-            dir_title = st.text_input("Director Title", value="Director, JMI International")
-        with c_sig2:
+        st.subheader("🖋️ Signature Settings")
+        
+        # ផ្នែកនេះទុកសម្រាប់ប្តូរតែឈ្មោះគ្រូបង្គោលប៉ុណ្ណោះ ព្រោះឈ្មោះ Director ថេរ
+        col_sig = st.columns(2)
+        with col_sig[0]:
+            st.info("Director: **DR. CHAN SOKHOEURN**") # បង្ហាញឱ្យដឹងថាឈ្មោះ Director ត្រូវបានកំណត់រួចរាល់
+        with col_sig[1]:
             ins_name = st.text_input("Instructor Name", value="DR. MEA LINA")
             ins_title = st.text_input("Instructor Title", value="Senior Instructor")
             
@@ -69,7 +69,7 @@ if choice == "Certification":
             style = cert_styles.get(s['Level'], cert_styles["HIGH SCHOOL"])
             logo_img = f'<img src="data:image/png;base64,{logo_base64}" width="100">' if logo_base64 else '🛡️'
 
-            # បង្កើតកូដ HTML សម្រាប់ Certificate
+            # ឈ្មោះ Director កំណត់ផ្ទាល់ក្នុងកូដ HTML តែម្តង
             html_code = f"""
             <div style="background:white; padding:30px; border:15px double {style['color']}; color:#333; text-align:center; font-family:Arial, sans-serif;">
                 <div style="border:2px solid #D4AF37; padding:20px;">
@@ -85,11 +85,13 @@ if choice == "Certification":
                     
                     <div style="display:flex; justify-content:space-around; margin-top:30px; align-items: flex-end;">
                         <div style="text-align:center; border-top:1px solid #333; width:180px;">
-                            <br><b>{dir_name}</b><br><small style="font-size:10px;">{dir_title}</small>
+                            <br><b>DR. CHAN SOKHOEURN</b><br><small style="font-size:10px;">Director, JMI International</small>
                         </div>
+                        
                         <div style="text-align:center;">
                             <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data={s['ID']}" width="60">
                         </div>
+                        
                         <div style="text-align:center; border-top:1px solid #333; width:180px;">
                             <br><b>{ins_name}</b><br><small style="font-size:10px;">{ins_title}</small>
                         </div>
@@ -97,10 +99,9 @@ if choice == "Certification":
                 </div>
             </div>
             """
-            # ប្រើ st.components.v1.html ដើម្បីបង្ហាញ HTML ឱ្យចេញជារូបរាងពិតប្រាកដ
             st.components.v1.html(html_code, height=650, scrolling=True)
 
-# --- MODULES: Dashboard, Enrollment, Finance (រក្សាទុកធម្មតា) ---
+# --- ផ្នែកផ្សេងៗ Dashboard, Enrollment, Financial Hub នៅរក្សាទុកដដែល ---
 elif choice == "Dashboard":
     st.title("📊 JMI Strategic Analytics")
     st.dataframe(st.session_state.db, use_container_width=True)
@@ -111,7 +112,7 @@ elif choice == "Enrollment":
         n = st.text_input("Scholar Name")
         l = st.selectbox("Level", ["KINDERGARTEN", "PRIMARY SCHOOL", "JUNIOR HIGH SCHOOL", "HIGH SCHOOL"])
         if st.form_submit_button("REGISTER"):
-            new = {"ID": f"JMI-{len(st.session_state.db)+1:03d}", "Name": n.upper(), "Level": l, "Fee": 250.0, "Paid": "PAID", "Date": "2026-03-25"}
+            new = {"ID": f"JMI-{len(st.session_state.db)+1:03d}", "Name": n.upper(), "Level": l, "Fee": 250.0, "Paid": "PAID", "Date": datetime.now().strftime("%Y-%m-%d")}
             st.session_state.db = pd.concat([st.session_state.db, pd.DataFrame([new])], ignore_index=True)
             st.success("Registration Successful!")
 

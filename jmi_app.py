@@ -125,23 +125,30 @@ elif menu == "🎓 Enrollment":
 # --- MODULE 3: SKILL PASSPORT ---
 elif menu == "📔 Skill Passport":
     st.markdown("<h1 class='header-style'>📔 Skill Mastery Passport</h1>", unsafe_allow_html=True)
+    
     if not st.session_state.db.empty:
         sel_student = st.selectbox("Select Student:", st.session_state.db['Name'].tolist())
         st.info(f"Scholar: {sel_student} | Level: {st.session_state.db[st.session_state.db['Name']==sel_student]['Level'].values[0]}")
         
-        # logic សម្រាប់ Check all Lesson
-        master_check = st.checkbox("✅ Check all Lesson", key=f"master_{sel_student}")
+        # មុខងារបិទ/បើក ទាំងអស់ (Sync Toggle)
+        def sync_lessons():
+            state_val = st.session_state[f"master_{sel_student}"]
+            for i in range(1, 13):
+                st.session_state[f"L{i}_{sel_student}"] = state_val
+
+        # ប៊ូតុង Check All ដែលមានប្រើ on_change ដើម្បីដោះស្រាយបញ្ហាដោះគ្រីសមិនចេញ
+        st.checkbox("✅ Check all Lesson", 
+                    key=f"master_{sel_student}", 
+                    on_change=sync_lessons)
         
         st.markdown("---")
         cols = st.columns(2)
         
         for i in range(1, 13):
             check_key = f"L{i}_{sel_student}"
-            
-            # បើចុច Check all វានឹង Update គ្រប់មេរៀន
-            if master_check:
-                st.session_state[check_key] = True
-            
+            if check_key not in st.session_state:
+                st.session_state[check_key] = False
+                
             with cols[0 if i <= 6 else 1]:
                 st.checkbox(f"Medical Competency Module {i}", key=check_key)
     else:

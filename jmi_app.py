@@ -1,17 +1,18 @@
 import streamlit as st
 import pandas as pd
 
-# --- ១. ការកំណត់ទំព័រ និង Branding ---
+# --- ១. ការកំណត់ទំព័រ (Page Configuration) ---
 st.set_page_config(page_title="JMI Management System", page_icon="🏥", layout="wide")
 
-# បង្កើត Database បណ្តោះអាសន្ន (ទិន្នន័យនឹងបាត់បើ Refresh លុះត្រាតែភ្ជាប់ Google Sheets)
+# បង្កើត Database បណ្តោះអាសន្ននៅក្នុង Session (ទិន្នន័យនឹង Reset បើ Refresh)
 if 'jmi_db' not in st.session_state:
     st.session_state.jmi_db = pd.DataFrame(columns=[
         "ID", "ឈ្មោះសិស្ស", "កម្រិត", "ជំនាញវេជ្ជសាស្ត្រ", "ពិន្ទុវាយតម្លៃ", "ស្ថានភាពបង់ប្រាក់"
     ])
 
-# --- ២. Sidebar Menu ---
+# --- ២. របារចំហៀង (Sidebar Menu) ---
 st.sidebar.title("🏥 JMI Control Panel")
+st.sidebar.subheader("ដោយ៖ Dr. CHAN Sokhoeurn")
 menu = st.sidebar.selectbox("សូមជ្រើសរើសផ្នែក", 
     ["🏠 ទំព័រដើម", "📝 ចុះឈ្មោះសិស្ស", "📚 កម្មវិធីសិក្សា K-12", "🏆 Skill Passport", "💰 រដ្ឋបាល & ហិរញ្ញវត្ថុ"])
 
@@ -20,8 +21,6 @@ menu = st.sidebar.selectbox("សូមជ្រើសរើសផ្នែក",
 # 🏠 ផ្នែកទី ១៖ ទំព័រដើម (Dashboard)
 if menu == "🏠 ទំព័រដើម":
     st.header("📊 ទំព័រដើម - JMI Overview")
-    
-    # បង្ហាញលេខស្ថិតិ
     col1, col2, col3 = st.columns(3)
     total_students = len(st.session_state.jmi_db)
     paid_students = len(st.session_state.jmi_db[st.session_state.jmi_db["ស្ថានភាពបង់ប្រាក់"] == "បង់រួច"])
@@ -56,21 +55,55 @@ elif menu == "📝 ចុះឈ្មោះសិស្ស":
             else:
                 st.error("សូមបំពេញ ID និង ឈ្មោះសិស្ស!")
 
-# 📚 ផ្នែកទី ៣៖ កម្មវិធីសិក្សា (Curriculum)
+# 📚 ផ្នែកទី ៣៖ កម្មវិធីសិក្សា (Curriculum) បែងចែកជា ៤ កម្រិត
 elif menu == "📚 កម្មវិធីសិក្សា K-12":
-    st.header("📚 កម្មវិធីសិក្សា Junior Medical Institute")
-    level_choice = st.radio("ជ្រើសរើសកម្រិតមេរៀន:", ["មត្តេយ្យ/បឋម (Foundation)", "អនុ/វិទ្យាល័យ (Advanced)"], horizontal=True)
+    st.header("📚 កម្មវិធីសិក្សាឯកទេស Junior Medical Institute")
     
-    if level_choice == "មត្តេយ្យ/បឋម (Foundation)":
-        st.subheader("🍼 កម្រិតដំបូង៖ សុខភាព និងរូបរាងកាយ")
-        st.write("- **មេរៀនទី១:** ស្គាល់ពីសរីរាង្គខាងក្រៅ (Human Organs)")
-        st.write("- **មេរៀនទី២:** អាហារូបត្ថម្ភសម្រាប់កុមារ (Pediatric Nutrition)")
-        st.info("💡 គន្លឹះបង្រៀន៖ ប្រើប្រាស់រូបភាពពណ៌ និងការលេងហ្គេមបិទរូបសរីរាង្គ។")
-    else:
-        st.subheader("🔬 កម្រិតខ្ពស់៖ មូលដ្ឋានគ្រឹះវិជ្ជាជីវៈ")
-        st.write("- **មេរៀនទី១:** ការវាស់សញ្ញាជីវិត (Vital Signs: BP, Pulse, Temp)")
-        st.write("- **មេរៀនទី២:** ការសង្គ្រោះបឋម (Basic First Aid & CPR)")
-        st.warning("⚠️ ការអនុវត្តត្រូវមានការត្រួតពិនិត្យពីគ្រូជំនាញ។")
+    t1, t2, t3, t4 = st.tabs(["🍼 Kindergarten", "🏫 Primary", "🔬 Secondary", "🎓 High School"])
+    
+    with t1:
+        st.subheader("🍼 កម្រិតមត្តេយ្យ (Foundation)")
+        c1, c2 = st.columns(2)
+        with c1:
+            st.info("**មេរៀនទី១:** ស្គាល់ពីសរីរាង្គខាងក្រៅ (Human Organs)")
+            st.write("- ភ្នែក ច្រមុះ មាត់ ត្រចៀក និងមុខងាររបស់វា")
+        with c2:
+            st.info("**មេរៀនទី២:** អាហារូបត្ថម្ភកុមារ (Pediatric Nutrition)")
+            st.write("- ស្គាល់ពីបន្លែ ផ្លែឈើ និងអត្ថប្រយោជន៍ទឹកដោះគោ")
+        st.success("💡 **គន្លឹះបង្រៀន:** ប្រើប្រាស់រូបភាពពណ៌ ហ្គេមបិទរូបសរីរាង្គ និងចម្រៀងកាយវិការ។")
+
+    with t2:
+        st.subheader("🏫 កម្រិតបឋមសិក្សា (Elementary)")
+        c1, c2 = st.columns(2)
+        with c1:
+            st.info("**មេរៀនទី១:** ប្រព័ន្ធរំលាយអាហារ (Digestive System)")
+            st.write("- ដំណើរការនៃអាហារពីមាត់ទៅកាន់ក្រពះ និងពោះវៀន")
+        with c2:
+            st.info("**មេរៀនទី២:** អនាម័យ និងមេរោគ (Germs & Hygiene)")
+            st.write("- របៀបលាងដៃ ៧ ជំហាន និងការការពារខ្លួនពីបាក់តេរី")
+        st.success("💡 **គន្លឹះបង្រៀន:** ពិសោធន៍វិទ្យាសាស្ត្រងាយៗ (ឧ. ការប្រើម្សៅតំណាងឱ្យមេរោគលើដៃ)។")
+
+    with t3:
+        st.subheader("🔬 កម្រិតអនុវិទ្យាល័យ (Secondary)")
+        c1, c2 = st.columns(2)
+        with c1:
+            st.info("**មេរៀនទី១:** ប្រព័ន្ធរបត់ឈាម (Circulatory System)")
+            st.write("- មុខងារបេះដូង សរសៃឈាម និងការវាស់ចង្វាក់បេះដូង (Pulse)")
+        with c2:
+            st.info("**មេរៀនទី២:** មូលដ្ឋានគ្រឹះសង្គ្រោះបឋម (Basic First Aid)")
+            st.write("- របៀបលាងរបួស ការរុំរបួសបឋម និងការប្រើប្រាស់បង់បិទ")
+        st.success("💡 **គន្លឹះបង្រៀន:** ការអនុវត្តផ្ទាល់ជាមួយឧបករណ៍វាស់ស្ទង់ (Stethoscope)។")
+
+    with t4:
+        st.subheader("🎓 កម្រិតវិទ្យាល័យ (High School - Pre-Med)")
+        c1, c2 = st.columns(2)
+        with c1:
+            st.info("**មេរៀនទី១:** សញ្ញាជីវិត (Vital Signs)")
+            st.write("- របៀបវាស់សម្ពាធឈាម (BP) កម្តៅ និងអុកស៊ីសែនក្នុងឈាម")
+        with c2:
+            st.info("**មេរៀនទី២:** វេជ្ជសាស្ត្របច្ចេកវិទ្យា (Digital Health/AI)")
+            st.write("- ការប្រើប្រាស់ AI និង Telemedicine ក្នុងវិស័យសុខាភិបាលទំនើប")
+        st.success("💡 **គន្លឹះបង្រៀន:** ចុះអនុវត្តនៅមន្ទីរពេទ្យ ឬស្តាប់ការចែករំលែកពីគ្រូពេទ្យជំនាញ។")
 
 # 🏆 ផ្នែកទី ៤៖ Skill Passport (វាយតម្លៃ)
 elif menu == "🏆 Skill Passport":
@@ -89,8 +122,6 @@ elif menu == "🏆 Skill Passport":
 # 💰 ផ្នែកទី ៥៖ រដ្ឋបាល & ហិរញ្ញវត្ថុ
 elif menu == "💰 រដ្ឋបាល & ហិរញ្ញវត្ថុ":
     st.header("💰 គ្រប់គ្រងការបង់ប្រាក់ និងរដ្ឋបាល")
-    
-    # កន្លែងកែប្រែស្ថានភាពបង់ប្រាក់
     if not st.session_state.jmi_db.empty:
         col_a, col_b = st.columns(2)
         with col_a:

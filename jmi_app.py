@@ -12,15 +12,48 @@ except ImportError:
 # --- ២. ការកំណត់ទម្រង់កម្មវិធី ---
 st.set_page_config(page_title="JMI | Strategic Management Portal", page_icon="🛡️", layout="wide")
 
-# --- ៣. ការរចនា Style បន្ថែម (Custom CSS) ---
+# --- ៣. ការរចនា Style បន្ថែម (អក្សរពណ៌មាសទាំងអស់) ---
 st.markdown("""
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Kantumruy+Pro:wght@400;700&display=swap" rel="stylesheet">
 <style>
-    .stApp { background: radial-gradient(circle, #002d5a 0%, #001529 100%); color: #E6E9ED !important; }
-    [data-testid="stSidebar"] { background-color: #001529 !important; border-right: 1px solid rgba(212,175,55,0.2); }
-    .header-style { color: #D4AF37 !important; border-left: 5px solid #D4AF37; padding-left: 15px; font-family: 'Cinzel'; }
-    .skill-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(212,175,55,0.2); border-radius: 10px; padding: 15px; margin-bottom: 10px; }
-    .stButton>button { border-radius: 8px !important; font-weight: 600 !important; }
+    /* កំណត់ផ្ទៃខាងក្រោយ */
+    .stApp { 
+        background: radial-gradient(circle, #002d5a 0%, #001529 100%); 
+    }
+
+    /* បង្ខំឱ្យអក្សរទាំងអស់ទៅជាពណ៌មាស #D4AF37 */
+    html, body, [data-testid="stWidgetLabel"], .stMarkdown, p, span, label, li, div, h1, h2, h3, .stMetric, [data-testid="stHeader"] {
+        color: #D4AF37 !important;
+        font-family: 'Kantumruy Pro', 'Cinzel', sans-serif;
+    }
+
+    /* Sidebar Styling */
+    [data-testid="stSidebar"] { 
+        background-color: #001529 !important; 
+        border-right: 1px solid rgba(212,175,55,0.4); 
+    }
+    
+    /* ការកំណត់ពណ៌មាសសម្រាប់ Input Boxes និង Widgets */
+    .stTextInput>div>div>input, .stSelectbox>div>div>div, .stDataEditor {
+        color: #D4AF37 !important;
+        border-color: rgba(212,175,55,0.5) !important;
+    }
+
+    .header-style { 
+        color: #D4AF37 !important; 
+        border-left: 5px solid #D4AF37; 
+        padding-left: 15px; 
+        font-family: 'Cinzel'; 
+    }
+
+    /* រចនាប៊ូតុងឱ្យមានពន្លឺមាស */
+    .stButton>button { 
+        background: linear-gradient(135deg, #D4AF37 0%, #B8860B 100%) !important;
+        color: #001529 !important; /* អក្សរក្នុងប៊ូតុងពណ៌ខៀវចាស់ដើម្បីឱ្យច្បាស់ */
+        border-radius: 8px !important; 
+        font-weight: 700 !important;
+        border: none !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -44,17 +77,15 @@ with st.sidebar:
         st.warning("Please enter access key")
         st.stop()
 
-# --- MODULE 1: DASHBOARD (ជាមួយ Quick Filter) ---
+# --- MODULE 1: DASHBOARD ---
 if menu == "📊 Dashboard":
     st.markdown("<h1 class='header-style'>JMI Strategic Command Center</h1>", unsafe_allow_html=True)
     
-    # KPI Top Row
     c1, c2, c3 = st.columns(3)
     c1.metric("Total Scholars", len(st.session_state.db))
     c2.metric("Status", "Operational")
     c3.metric("Year", "2026")
 
-    # Quick Filter System (ចំណុចបន្ថែមទី៣)
     st.markdown("### 🔍 ចម្រោះទិន្នន័យតាមកម្រិតសិក្សា (Quick Filter)")
     lv_filter = st.segmented_control("ជ្រើសរើសកម្រិត:", ["ទាំងអស់", "មត្តេយ្យ", "បឋម", "អនុវិទ្យាល័យ", "វិទ្យាល័យ"], default="ទាំងអស់")
     
@@ -64,8 +95,7 @@ if menu == "📊 Dashboard":
 
     st.dataframe(df_display, use_container_width=True)
 
-    # Data Management Hub (ចំណុចបន្ថែមទី២ - កែសម្រួលទិន្នន័យ)
-    st.markdown("### ⚙️ Data Management Hub (រក្សាទុក កែ និងលុប)")
+    st.markdown("### ⚙️ Data Management Hub")
     edited_df = st.data_editor(st.session_state.db, num_rows="dynamic", use_container_width=True)
     if st.button("រក្សាទុកការកែប្រែ (Save Changes)"):
         st.session_state.db = edited_df
@@ -84,7 +114,7 @@ elif menu == "🎓 Enrollment":
             st.balloons()
             st.success(f"សិស្ស {name} ចុះឈ្មោះជោគជ័យ!")
 
-# --- MODULE 3: SKILL PASSPORT (ចំណុចបន្ថែមទី១ - មេរៀន) ---
+# --- MODULE 3: SKILL PASSPORT ---
 elif menu == "📔 Skill Passport":
     st.markdown("<h1 class='header-style'>📔 Skill Mastery Passport</h1>", unsafe_allow_html=True)
     sel_student = st.selectbox("Select Student:", st.session_state.db['Name'].tolist())
@@ -108,14 +138,15 @@ elif menu == "📜 Certification":
     s_info = st.session_state.db[st.session_state.db['Name'] == rec_name].iloc[0]
     
     if st.button("GENERATE"):
+        # សម្រាប់សញ្ញាបត្រ ខ្ញុំរក្សាពណ៌ចម្រុះ (ស/មាស) ដើម្បីឱ្យដូចសញ្ញាបត្រពិត
         st.markdown(f"""
-        <div style="background:white; padding:40px; border:15px solid #D4AF37; text-align:center; color:#001529;">
-            <h1 style="color:#D4AF37; margin:0;">JUNIOR MEDICAL INSTITUTE</h1>
-            <p>Certificate of Completion</p>
-            <h2 style="font-family:'Cinzel'; font-size:50px; color:#B8860B;">{s_info['Name']}</h2>
-            <p>Successfully mastered the curriculum for <b>{s_info['Level']}</b></p>
+        <div style="background:white; padding:40px; border:15px solid #D4AF37; text-align:center;">
+            <h1 style="color:#D4AF37 !important; margin:0; font-family:'Cinzel';">JUNIOR MEDICAL INSTITUTE</h1>
+            <p style="color:#001529 !important;">Certificate of Completion</p>
+            <h2 style="font-family:'Cinzel'; font-size:50px; color:#B8860B !important;">{s_info['Name']}</h2>
+            <p style="color:#001529 !important;">Successfully mastered the curriculum for <b>{s_info['Level']}</b></p>
             <br><br>
             <hr style="width:30%; border:1px solid #001529;">
-            <b>Dr. Chan Sokhoeurn</b>
+            <b style="color:#001529 !important;">Dr. Chan Sokhoeurn</b>
         </div>
         """, unsafe_allow_html=True)

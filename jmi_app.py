@@ -119,43 +119,58 @@ if pwd == "JMI2026":
                 else:
                     st.error("សូមបំពេញព័ត៌មានទាំងឈ្មោះ និងលេខសម្គាល់!")
 
-    # --- ៥.៣ Skill Passport (កន្លែងបែងចែកស្វ័យប្រវត្តិ) ---
+    # --- ៥.៣ Skill Passport (កែសម្រួលថ្មី៖ បែងចែកតាមកម្រិត) ---
     elif menu == "🏅 Skill Passport":
         st.header("🏅 Skill Mastery Passport")
-        sel_student = st.selectbox("Select Student:", st.session_state.db['Name'].tolist())
         
-        # ទាញយក Index និងកម្រិតរបស់សិស្សម្នាក់នោះ
-        idx = st.session_state.db.index[st.session_state.db['Name'] == sel_student][0]
-        student_level = st.session_state.db.at[idx, 'Level']
+        # បន្ថែមការជ្រើសរើសកម្រិត ដើម្បីចម្រោះឈ្មោះសិស្ស
+        sel_level = st.selectbox("Select Level (ជ្រើសរើសកម្រិតសិក្សា):", ["ទាំងអស់", "មត្តេយ្យ", "បឋម", "អនុវិទ្យាល័យ", "វិទ្យាល័យ"])
         
-        # ទាញយកចំនួនមេរៀនតាមកម្រិត ស្វ័យប្រវត្តិ!
-        available_skills = get_lessons(student_level)
-        current_skills = st.session_state.db.at[idx, 'Skills']
-        
-        st.markdown(f"### ស្ថានភាពសិក្សារបស់៖ {sel_student}")
-        st.write(f"កម្រិតសិក្សា៖ **{student_level}** (ត្រូវការរៀនចំនួន {len(available_skills)} មេរៀន)")
-        
-        # បង្កើតរបារភាគរយ Progress Bar
-        completed_count = len([s for s in current_skills if s in available_skills])
-        total_count = len(available_skills)
-        progress = completed_count / total_count if total_count > 0 else 0
-        
-        st.progress(progress)
-        st.write(f"បានបញ្ចប់៖ {completed_count} / {total_count} មេរៀន")
-        st.markdown("---")
-        
-        # បង្ហាញ Checkbox តាមចំនួនមេរៀនដែលបានបែងចែក
-        new_selection = []
-        col1, col2 = st.columns(2)
-        for i, skill in enumerate(available_skills):
-            with (col1 if i % 2 == 0 else col2):
-                if st.checkbox(skill, value=(skill in current_skills)):
-                    new_selection.append(skill)
-        
-        if st.button("💾 Save Progress"):
-            st.session_state.db.at[idx, 'Skills'] = new_selection
-            st.success(f"Updated skills for {sel_student}!")
-            st.rerun()
+        if sel_level == "ទាំងអស់":
+            filtered_students = st.session_state.db
+        else:
+            filtered_students = st.session_state.db[st.session_state.db['Level'] == sel_level]
+            
+        if filtered_students.empty:
+            st.warning(f"មិនទាន់មានសិស្សនៅក្នុងកម្រិត '{sel_level}' ទេ។")
+        else:
+            # បង្ហាញឈ្មោះសិស្ស ភ្ជាប់ជាមួយកម្រិត ដើម្បីងាយចំណាំ
+            student_list = filtered_students.apply(lambda x: f"{x['Name']} ({x['Level']})", axis=1).tolist()
+            sel_student_str = st.selectbox("Select Student (ជ្រើសរើសសិស្ស):", student_list)
+            
+            # ទាញយក index ពិតប្រាកដក្នុង Database
+            selected_idx = filtered_students.index[student_list.index(sel_student_str)]
+            
+            student_name = st.session_state.db.at[selected_idx, 'Name']
+            student_level = st.session_state.db.at[selected_idx, 'Level']
+            available_skills = get_lessons(student_level)
+            current_skills = st.session_state.db.at[selected_idx, 'Skills']
+            
+            st.markdown(f"### ស្ថានភាពសិក្សារបស់៖ {student_name}")
+            st.write(f"កម្រិតសិក្សា៖ **{student_level}** (ត្រូវការរៀនចំនួន {len(available_skills)} មេរៀន)")
+            
+            # របារភាគរយ Progress Bar
+            completed_count = len([s for s in current_skills if s in available_skills])
+            total_count = len(available_skills)
+            progress = completed_count / total_count if total_count > 0 else 0
+            
+            st.progress(progress)
+            st.write(f"បានបញ្ចប់៖ {completed_count} / {total_count} មេរៀន")
+            st.markdown("---")
+            
+            # បង្ហាញ Checkbox
+            new_selection = []
+            col1, col2 = st.columns(2)
+            for i, skill in enumerate(available_skills):
+                with (col1 if i % 2 == 0 else col2):
+                    # ប្រើ Key ពិសេសជៀសវាងការជាន់គ្នា
+                    if st.checkbox(skill, value=(skill in current_skills), key=f"{selected_idx}_{skill}"):
+                        new_selection.append(skill)
+            
+            if st.button("💾 Save Progress"):
+                st.session_state.db.at[selected_idx, 'Skills'] = new_selection
+                st.success(f"Updated skills for {student_name}!")
+                st.rerun()
 
     # --- ៥.៤ Certification ---
     elif menu == "📜 Certification":

@@ -38,18 +38,19 @@ with st.sidebar:
         st.warning("🔒 SECURE ACCESS ONLY")
         st.stop()
 
-# --- MODULE 4: CERTIFICATION ---
+# --- MODULE 4: CERTIFICATION (កែសម្រួលហត្ថលេខា) ---
 if choice == "Certification":
     st.title("📜 Official Certification Hub")
     
     if not st.session_state.db.empty:
         st.subheader("🖋️ Signature Settings")
         
-        # ផ្នែកនេះទុកសម្រាប់ប្តូរតែឈ្មោះគ្រូបង្គោលប៉ុណ្ណោះ ព្រោះឈ្មោះ Director ថេរ
         col_sig = st.columns(2)
         with col_sig[0]:
-            st.info("Director: **DR. CHAN SOKHOEURN**") # បង្ហាញឱ្យដឹងថាឈ្មោះ Director ត្រូវបានកំណត់រួចរាល់
+            # បង្ហាញឈ្មោះ Director ដែលបានកំណត់ក្នុងកូដស្រាប់
+            st.success("Director: **DR. CHAN SOKHOEURN**") 
         with col_sig[1]:
+            # ប្រអប់សម្រាប់បញ្ចូលឈ្មោះគ្រូបង្គោល (ងាយស្រួលប្តូរទៅថ្ងៃមុខ)
             ins_name = st.text_input("Instructor Name", value="DR. MEA LINA")
             ins_title = st.text_input("Instructor Title", value="Senior Instructor")
             
@@ -59,7 +60,7 @@ if choice == "Certification":
         if st.button("GENERATE LUXURY CERTIFICATE"):
             s = st.session_state.db[st.session_state.db['Name'] == rec].iloc[0]
             
-            # កំណត់ស្ទីលតាមកម្រិត
+            # កំណត់ពណ៌ និងចំណងជើងតាមកម្រិតទាំង ៤
             cert_styles = {
                 "KINDERGARTEN": {"title": "CERTIFICATE OF PREPARATION", "color": "#2E7D32", "grades": "Ages 4-6"},
                 "PRIMARY SCHOOL": {"title": "CERTIFICATE OF ACHIEVEMENT", "color": "#1565C0", "grades": "Grades 1-5"},
@@ -69,7 +70,7 @@ if choice == "Certification":
             style = cert_styles.get(s['Level'], cert_styles["HIGH SCHOOL"])
             logo_img = f'<img src="data:image/png;base64,{logo_base64}" width="100">' if logo_base64 else '🛡️'
 
-            # ឈ្មោះ Director កំណត់ផ្ទាល់ក្នុងកូដ HTML តែម្តង
+            # កូដ HTML សម្រាប់បង្ហាញរូបរាង Certificate
             html_code = f"""
             <div style="background:white; padding:30px; border:15px double {style['color']}; color:#333; text-align:center; font-family:Arial, sans-serif;">
                 <div style="border:2px solid #D4AF37; padding:20px;">
@@ -99,9 +100,10 @@ if choice == "Certification":
                 </div>
             </div>
             """
+            # ប្រើ st.components.v1.html ដើម្បីបង្ហាញ Visual ឱ្យត្រឹមត្រូវ (ដោះស្រាយបញ្ហាចេញតែកូដ)
             st.components.v1.html(html_code, height=650, scrolling=True)
 
-# --- ផ្នែកផ្សេងៗ Dashboard, Enrollment, Financial Hub នៅរក្សាទុកដដែល ---
+# --- MODULES: Dashboard, Enrollment, Finance ---
 elif choice == "Dashboard":
     st.title("📊 JMI Strategic Analytics")
     st.dataframe(st.session_state.db, use_container_width=True)

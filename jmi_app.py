@@ -2,14 +2,14 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-# --- ១. ការកំណត់ទម្រង់កម្មវិធី (App Configuration) ---
+# --- ១. ការកំណត់ទម្រង់កម្មវិធី ---
 st.set_page_config(
     page_title="JMI | Strategic Management Portal",
     page_icon="🏥",
     layout="wide"
 )
 
-# --- ២. ការរចនា Style (Safe CSS - គ្មានថ្ងៃ Error អក្សររាយប៉ាយ) ---
+# --- ២. ការរចនា Style (Safe CSS) ---
 style_block = """
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cinzel:wght@700&family=DM+Serif+Display&family=Kantumruy+Pro:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -17,8 +17,6 @@ style_block = """
         font-family: 'Kantumruy Pro', sans-serif;
     }
     .stApp { background-color: #f8f9fa; }
-    
-    /* Star Styling */
     .star-gold { color: #D4AF37; font-size: 25px; margin-right: 3px; }
     
     /* Premium Certificate Style */
@@ -46,14 +44,14 @@ if 'db' not in st.session_state:
         {
             "ID": "JMI-2026-001", 
             "Name": "Sokhoeurn Sovannachak", 
-            "Level": "K-G3", 
+            "Level": "មត្តេយ្យ", 
             "Enroll_Date": "2026-03-25", 
             "Status": "Active", 
-            "Skills": ["Clinical Hygiene", "Human Anatomy"]
+            "Skills": []
         }
     ])
 
-# --- ៤. របារចំហៀង (Sidebar Security) ---
+# --- ៤. របារចំហៀង (Sidebar) ---
 st.sidebar.markdown("<h2 style='text-align: center; color: #001f3f;'>JMI EXECUTIVE</h2>", unsafe_allow_html=True)
 st.sidebar.markdown("<center><h1 style='font-size:60px;'>🏥</h1></center>", unsafe_allow_html=True)
 st.sidebar.markdown("---")
@@ -64,28 +62,33 @@ pwd = st.sidebar.text_input("Director's Key", type="password", placeholder="Ente
 if pwd == "JMI2026":
     st.sidebar.success("Welcome, Dr. CHAN Sokhoeurn")
     
-    # ម៉ឺនុយបញ្ជា (Menu)
     menu = st.sidebar.radio("STRATEGIC MODULES", ["📊 Dashboard", "🎓 Enrollment", "🏅 Skill Passport", "📜 Certification"])
 
-    # --- ៥.១ ម៉ូឌុល Dashboard ---
+    # មុខងារកំណត់មេរៀនស្វ័យប្រវត្តិតាមកម្រិត
+    def get_lessons(level):
+        if level in ["មត្តេយ្យ", "បឋម"]:
+            return [f"មេរៀនទី {i}" for i in range(1, 10)] # ៩ មេរៀន
+        else:
+            return [f"មេរៀនទី {i}" for i in range(1, 13)] # ១២ មេរៀន
+
+    # --- ៥.១ Dashboard ---
     if menu == "📊 Dashboard":
         st.title("🏥 JMI Strategic Command Center")
         c1, c2, c3 = st.columns(3)
         c1.metric("Total Scholars", len(st.session_state.db))
-        c2.metric("Med-Modules", "12 Units")
-        c3.metric("Capacity", "250 Seats")
+        c2.metric("Status", "Operational")
+        c3.metric("Year", "2026")
         
         st.markdown("### 📋 Student Roster")
-        # បង្ហាញតារាងដោយលាក់ Skill កុំឱ្យរញ៉េរញ៉ៃ
         st.dataframe(st.session_state.db.drop(columns=['Skills']), use_container_width=True)
 
-    # --- ៥.២ ម៉ូឌុល Enrollment ---
+    # --- ៥.២ Enrollment (ចុះឈ្មោះ) ---
     elif menu == "🎓 Enrollment":
         st.header("Register New Scholar")
         with st.form("enroll_form", clear_on_submit=True):
             name = st.text_input("Full Name (ឈ្មោះពេញ)")
             sid = st.text_input("Scholar ID (លេខសម្គាល់)")
-            level = st.selectbox("Academic Level", ["K-G3", "G4-G6", "G7-G9", "G10-G12"])
+            level = st.selectbox("Academic Level", ["មត្តេយ្យ", "បឋម", "អនុវិទ្យាល័យ", "វិទ្យាល័យ"])
             
             if st.form_submit_button("✅ CONFIRM ENROLLMENT"):
                 if name and sid:
@@ -102,21 +105,21 @@ if pwd == "JMI2026":
                 else:
                     st.error("សូមបំពេញព័ត៌មានទាំងឈ្មោះ និងលេខសម្គាល់!")
 
-    # --- ៥.៣ ម៉ូឌុល Skill Passport ---
+    # --- ៥.៣ Skill Passport (កំណត់មេរៀន) ---
     elif menu == "🏅 Skill Passport":
         st.header("🏅 Skill Mastery Passport")
         sel_student = st.selectbox("Select Student:", st.session_state.db['Name'].tolist())
         
-        # ទាញយក Index របស់សិស្សដែលបានរើស
         idx = st.session_state.db.index[st.session_state.db['Name'] == sel_student][0]
+        student_level = st.session_state.db.at[idx, 'Level']
         
-        available_skills = ["Clinical Hygiene", "Human Anatomy", "Vital Signs", "First Aid (CPR)", "Medical Ethics", "Nutrition"]
+        # ទាញយកចំនួនមេរៀនតាមកម្រិត
+        available_skills = get_lessons(student_level)
         current_skills = st.session_state.db.at[idx, 'Skills']
         
-        st.write("Tick the medical foundations completed by the scholar:")
-        new_selection = []
+        st.write(f"កម្រិត៖ **{student_level}** (មានចំនួន {len(available_skills)} មេរៀន)")
         
-        # បង្កើត Checkbox ជា ២ ជួរដេក
+        new_selection = []
         col1, col2 = st.columns(2)
         for i, skill in enumerate(available_skills):
             with (col1 if i % 2 == 0 else col2):
@@ -128,24 +131,20 @@ if pwd == "JMI2026":
             st.success(f"Updated skills for {sel_student}!")
             st.rerun()
 
-    # --- ៥.៤ ម៉ូឌុល Certification ---
+    # --- ៥.៤ Certification (ចេញសញ្ញាបត្រ) ---
     elif menu == "📜 Certification":
         st.header("Certification Generator")
         target = st.selectbox("Select Recipient:", st.session_state.db['Name'].tolist())
         
-        # ទាញយកព័ត៌មានសិស្ស
         s_info = st.session_state.db[st.session_state.db['Name'] == target].iloc[0]
         
         if st.button("🌟 GENERATE CERTIFICATE"):
             if len(s_info['Skills']) == 0:
-                st.warning("Scholar នេះមិនទាន់ទទួលបាន Skill ណាមួយនៅឡើយទេ ដូច្នេះមិនទាន់អាចបង្កើតវិញ្ញាបនបត្របានទេ។")
+                st.warning("Scholar នេះមិនទាន់ទទួលបាន Skill ណាមួយនៅឡើយទេ។")
             else:
                 st.balloons()
-                
-                # បង្កើតផ្កាយមាសតាមចំនួន Skill ដែលទទួលបាន
                 stars_html = "".join(['<span class="star-gold">★</span>' for _ in range(len(s_info['Skills']))])
                 
-                # បង្កើត HTML វិញ្ញាបនបត្រ
                 certificate_html = f"""
                 <div class="cert-paper">
                     <div class="cert-border">
@@ -154,7 +153,7 @@ if pwd == "JMI2026":
                         <div style="margin: 10px 0;">{stars_html}</div>
                         <p class="cert-text" style="font-style: italic;">This award is proudly presented to</p>
                         <h2 class="student-name">{s_info['Name']}</h2>
-                        <p class="cert-text">for successfully completing the<br><b>Medical Foundation Pathway</b> ({s_info['Level']})</p>
+                        <p class="cert-text">for successfully completing <b>{len(s_info['Skills'])} lessons</b><br>in <b>Medical Foundation Pathway</b> ({s_info['Level']})</p>
                         <div style="margin-top: 50px; display: flex; justify-content: space-around;">
                             <div style="text-align:center;">
                                 <p style="font-size:14px; margin-bottom:5px;">{datetime.now().strftime("%d %B %Y")}</p>
@@ -169,8 +168,6 @@ if pwd == "JMI2026":
                 </div>
                 """
                 st.markdown(certificate_html, unsafe_allow_html=True)
-
-# --- ៦. ផ្ទាំង Lock បិទជិត ---
 else:
     st.title("🏥 JMI Strategic Command Portal")
-    st.info("🔒 សូមបញ្ចូល Password 'JMI2026' នៅរបារចំហៀងខាងឆ្វេង ដើម្បីបើកដំណើរការប្រព័ន្ធ។")
+    st.info("🔒 សូមបញ្ចូល Password 'JMI2026' ដើម្បីបើកដំណើរការប្រព័ន្ធ។")
